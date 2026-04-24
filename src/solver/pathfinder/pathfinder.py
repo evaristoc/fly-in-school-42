@@ -9,7 +9,7 @@ from ..structures.roadmap_entitites import Step, RoadMap
 from .heuristics import Heuristic, ZeroHeuristic
 
 
-Constraints = Dict[int, Dict[int, Dict[str, Set[Zone]]]]
+Constraints = Dict[int, Dict[int, Dict[str, List[Zone]]]]
 
 
 class Pathfinder:
@@ -205,16 +205,17 @@ class Pathfinder:
         tick: int,
         agent_id: int,
         zone: Zone,
-        constraints: Dict[int, Dict[int, Dict[str, Set[Zone | Edge]]]],
+        constraints: Dict[int, Dict[int, Dict[str, List[Zone | Edge]]]],
     ) -> bool:
         # TODO is not a set: it is a dict of zones / edges
         # with counted capacity
+
         return zone in constraints.get(tick, {}) \
                                   .get(agent_id, {}) \
-                                  .get("zones", set()) or \
+                                  .get("zones", list) or \
                         zone in constraints.get(tick, {}) \
                                   .get(agent_id, {}) \
-                                  .get("edges", set())
+                                  .get("edges", list)
 
     def _can_transition(self, current: Step, connection: Connection) -> bool:
         zone = connection.zone
