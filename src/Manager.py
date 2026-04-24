@@ -51,65 +51,44 @@ class Manager:
             break
 
     def parsing(self) -> None:
-        print("\033c")
-        print('\nEAha!! We got you. Wait as we validate the file...\n\n')
-        time.sleep(3)
+        print('\nParsing...\n\n')
         parser = Parser()
         self.graphdata = parser.etl_config(self.filepath)
         if not self.graphdata:
             print("Data Collection Error: No data was found (see main)")
             exit(1)
-        print("\nThe file has been successfully parsed. "
-              "Lets log some quick checks...\n\n")
-        print()
-        print("="*20)
+        print("\nFile successfully parsed.\n")
+        print("\n="*20)
         print("=== Check Graph ===")
         print("="*20)
-        print()
-        print(self.graphdata)
-        self.graph = Graph(self.graphdata)
-        print(self.graph)
-        print(self.graph.zones[0], self.graph.zones[0].neighbours)
-        print("dir", dir(self.graph))
-        members = inspect.getmembers(self.graph,
-                                     lambda a: not (inspect.isroutine(a)))
-        print("inspect", members)
-        print()
-        print("="*20)
-        print("=== Check Zones ===")
-        print("="*20)
-        print()
-        print(vars(self.graph.zones[1]))
-        print(dir(self.graph.zones[1]))
-        print()
-        print("="*20)
+        try:
+            self.graph = Graph(self.graphdata)
+            members = inspect.getmembers(self.graph,
+                                        lambda a: not (inspect.isroutine(a)))
+            print("inspect", members)
+        except Exception as e:
+            print("Error during graph creation. Exiting")
+            exit(1)
+        print("\n="*20)
         print("=== Check Agents ===")
         print("="*20)
-        print()
         agents = [Agent(self.graph, agent_id=id)
                   for id in range(self.graph.nb_drones)]
-        print(agents)
-        print("dict", agents[0].__dict__)
-        print("vars", vars(agents[0]))
-        print("dir", dir(agents[0]))
+        if len(agents) == 0:
+            print("No agents. Exiting")
+            exit(1)
         members = inspect.getmembers(agents[0],
                                      lambda a: not (inspect.isroutine(a)))
         print("inspect", members)
-        print()
+        print("\n="*20)
+        print("=== Model ===\n")
         print("="*20)
-        print("\nEverything seems to be fine. Not time to waste! "
-              "In few seconds we will run the model!\n\n")
-        time.sleep(10)
 
     def run(self) -> None:
         print("\033c")
-        time.sleep(2)
-        print("We are now about to run the planner. Wish me luck!!\n")
-        time.sleep(3)
-        print("\033c")
-        print()
         print("="*20)
         print("=== Run Planner ===")
+        time.sleep(2)
         print("="*20)
         print()
         agents = []
@@ -133,7 +112,7 @@ class Manager:
         self.roadmaps = prioplanner.solve(pathfinder, iterations=10)
 
         if not self.roadmaps:
-            print("⚠️ No feasible solution found!")
+            print("No feasible solution found!")
 
             # Option 1: increase Pathfinder's time horizon factor
             pathfinder.time_horizon_factor += 1
@@ -144,14 +123,12 @@ class Manager:
                                               iterations=2)
 
             if not self.roadmaps:
-                print(f"❌ Still no solution found after {iterations} retries.")
+                print(f"Still no solution found after {iterations} retries.")
                 exit(1)
         else:
             # Pretty-print the results
-            print("Great News! We got a solution! Give me a couple of secs "
-                  "to put everything together to show you the logs and "
-                  "let me know what you think... Almost done!\n\n")
-            time.sleep(5)
+            print("We got a solution. Printing on terminal...\n\n")
+            time.sleep(1)
             logger: Dict[int, str] = defaultdict(str)
             if self.graph:
                 for agent_id, roadmap in self.roadmaps.items():
@@ -182,14 +159,9 @@ class Manager:
                 else:
                     print(state)
 
-            print("\nAnd that's it for the mandatory part! "
-                  "Now let's make a file for the coolest renderer ever!!\n\n")
+            print("\nDone with mandatory part. Rendering...\n")
 
     def create_json(self) -> None:
-        time.sleep(1)
-        print("The final step before rendering! Let's create that "
-              "file, yeah!\n\n")
-        time.sleep(1)
         print()
         print("="*20)
         print("=== Making json file ===")
