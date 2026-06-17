@@ -8,7 +8,7 @@ from ...model.graph.Graph import Graph, Zone, Edge, Connection, StartZone, \
 from ..structures.roadmap_entitites import Step, RoadMap
 from .heuristics import Heuristic, ZeroHeuristic
 
-
+# TODO : I think constraints make more sense if based on Connections rather than Dict[str, List[Zone]]
 Constraints = Dict[int, Dict[int, Dict[str, List[Zone]]]]
 
 
@@ -172,6 +172,7 @@ class Pathfinder:
             # unfeasible / forbidden == banned states at time `tick`
             if state in unfeasible:
                 continue
+            # TODO : for _is_forbidden, better connection than next_zone
             if self._is_forbidden(next_tick, agent_id, next_zone, constraints):
                 unfeasible.add(state)
                 continue
@@ -207,8 +208,30 @@ class Pathfinder:
         zone: Zone,
         constraints: Dict[int, Dict[int, Dict[str, List[Zone | Edge]]]],
     ) -> bool:
-        # TODO is not a set: it is a dict of zones / edges
+        return zone in constraints.get(tick, {}) \
+                                  .get(agent_id, {}) \
+                                  .get("zones", list) or \
+                        zone in constraints.get(tick, {}) \
+                                  .get(agent_id, {}) \
+                                  .get("edges", list)
+    
+    def _is_forbidden_0001(
+        self,
+        tick: int,
+        agent_id: int,
+        zone: Zone,
+        constraints: Dict[int, Dict[int, Dict[str, List[Zone | Edge]]]],
+    ) -> bool:
+        # TODO 
+        # is not a set: it is a dict of zones / edges
         # with counted capacity
+        # TODO 
+        # this should replace is_forbidden
+
+
+        cons_zones = constraints.get(tick, {}) \
+                                .get(agent_id, {}) \
+                                .get("zones", list)
 
         return zone in constraints.get(tick, {}) \
                                   .get(agent_id, {}) \

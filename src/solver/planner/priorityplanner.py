@@ -19,6 +19,7 @@ class PriorityPlanner:
         self.agents = agents
         # Master Schedule: { tick: { agent_id:
         # { "zones": {Zone}, "edges": {Zone} } } }
+        # TODO : might it be Connections instead?
         CONSTR_T = Dict[int, Dict[int, Dict[str, Set[Zone | Edge]]]]
         self.master_constraints: CONSTR_T = defaultdict(
             lambda: defaultdict(lambda: {"zones": set(), "edges": set()})
@@ -84,6 +85,7 @@ class PriorityPlanner:
             for other_agent in self.agents:
                 if other_agent.agent_id == agent_id:
                     continue
+                # TODO : might change from dicts of zones or edges to Connection?
                 # Block the position
                 constraints: Dict[str, Set[Zone | Edge]] =\
                     self.master_constraints[tick][other_agent.agent_id]
@@ -91,3 +93,15 @@ class PriorityPlanner:
                 # Block the swap (Edge constraint)
                 if parent_z != current_z:  # was just parent_z, no comparison
                     constraints["edges"].add(current_z)  # was parent
+
+"""
+constraints could be Connections
+The problem is the swap issue: the Connection reads for me_zone
+It is the zone the agent will fly to that is now occupying
+In this project, edges is of form zone and meand the edge which destination zone will be occupied at that tick, so for capacity 1, that edge will be then unavailable
+
+A possible but not performing solution would be to use the Connection as constraint
+Once the agent decides which zone to occupy at time tick:
+- count all the Connection zones with zone of name "candidate" (I will need to either keep a counter reference of some sort to track the number of zones, or recount for each time)
+- 
+"""
