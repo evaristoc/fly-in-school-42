@@ -3,13 +3,11 @@ from typing import Dict, Set, Tuple, List, Optional, Iterator
 import heapq
 from itertools import count
 
-from ...model.graph.Graph import Graph, Zone, Edge, Connection, StartZone, \
+from ...model.graph.Graph import Graph, Zone, Connection, StartZone, \
     BlockedZone, RestrictedZone, PriorityZone
 from ..structures.roadmap_entitites import Step, RoadMap
+from ..structures.constraints import ConstraintZone, ConstraintEdge, ConstrMap
 from .heuristics import Heuristic, ZeroHeuristic
-
-# TODO : I think constraints make more sense if based on Connections rather than Dict[str, List[Zone]]
-Constraints = Dict[int, Dict[int, Dict[str, List[Zone]]]]
 
 
 class Pathfinder:
@@ -33,7 +31,7 @@ class Pathfinder:
         graph: Graph,
         agent_id: int,
         entry_time: int,
-        constraints: Dict[int, Dict[int, Dict[str, Set[Zone | Edge]]]],
+        constraints: ConstrMap,
     ) -> Optional[RoadMap]:
 
         open_set: List[Step] = []
@@ -124,7 +122,7 @@ class Pathfinder:
         current: Step,
         graph: Graph,
         agent_id: int,
-        constraints: Dict[int, Dict[int, Dict[str, Set[Zone | Edge]]]],
+        constraints: ConstrMap,
         open_set: List[Step],
         visited: Set[Tuple[str, int]],
         unfeasible: Set[Tuple[str, int]],
@@ -166,6 +164,7 @@ class Pathfinder:
 
             next_zone = connection.zone
             next_tick = current.tick + 1
+            # print("check tick", agent_id, next_tick)
 
             state = (next_zone.name, next_tick)
 
@@ -173,18 +172,23 @@ class Pathfinder:
             if state in unfeasible:
                 continue
             # TODO : for _is_forbidden, better connection than next_zone
-            if self._is_forbidden(next_tick, agent_id, next_zone, constraints):
+            if self._is_forbidden(next_tick, connection, constraints):
+                # print(agent_id, state)
+                # print("unfeasible", agent_id, unfeasible)
                 unfeasible.add(state)
                 continue
             # visited == not banned, just redundant
             if state in visited:
+                # print("visited", agent_id, visited)
                 continue
             # can_transition == temporary or permanent (not) evaluable state
             # include cases to which prioplanner doesn't have access
             if not self._can_transition(current, connection):
                 continue
+            #print("selected", agent_id, current, state)
             visited.add(state)
             step: Step | None = None
+            # print("selected candidate", agent_id, next_tick, connection.zone.name)
             if graph is not None and graph.goal is not None:
                 step = self._build_step(graph, current,
                                         connection, graph.goal, counter)
@@ -201,44 +205,50 @@ class Pathfinder:
     # Rules (clean separation)
     # -------------------------
 
+    # def _is_forbidden(
+    #     self,
+    #     tick: int,
+    #     agent_id: int,
+    #     zone: Zone,
+    #     constraints: Dict[int, Dict[int, Dict[str, List[Zone | Edge]]]],
+    # ) -> bool:
+    #     return zone in constraints.get(tick, {}) \
+    #                               .get(agent_id, {}) \
+    #                               .get("zones", list) or \
+    #                     zone in constraints.get(tick, {}) \
+    #                               .get(agent_id, {}) \
+    #                               .get("edges", list)
+    
     def _is_forbidden(
         self,
         tick: int,
-        agent_id: int,
-        zone: Zone,
-        constraints: Dict[int, Dict[int, Dict[str, List[Zone | Edge]]]],
-    ) -> bool:
-        return zone in constraints.get(tick, {}) \
-                                  .get(agent_id, {}) \
-                                  .get("zones", list) or \
-                        zone in constraints.get(tick, {}) \
-                                  .get(agent_id, {}) \
-                                  .get("edges", list)
-    
-    def _is_forbidden_0001(
-        self,
-        tick: int,
-        agent_id: int,
-        zone: Zone,
-        constraints: Dict[int, Dict[int, Dict[str, List[Zone | Edge]]]],
+        conn: Connection,
+        constraints: ConstrMap,
     ) -> bool:
         # TODO 
         # is not a set: it is a dict of zones / edges
         # with counted capacity
         # TODO 
         # this should replace is_forbidden
-
-
-        cons_zones = constraints.get(tick, {}) \
-                                .get(agent_id, {}) \
-                                .get("zones", list)
-
-        return zone in constraints.get(tick, {}) \
-                                  .get(agent_id, {}) \
-                                  .get("zones", list) or \
-                        zone in constraints.get(tick, {}) \
-                                  .get(agent_id, {}) \
-                                  .get("edges", list)
+        candzone: str = conn.zone.name
+        candedge: None | tuple = None
+        # does the zone has spare capacity?
+        cons_zones: ConstraintZone = constraints.get(tick, {}).get("zones", {})
+        zone = cons_zones.get(candzone)
+        if zone and zone["capacity"] == zone["counter"]:
+            print(candzone, zone)
+            return True
+        #print(zone, zone["capacity"], zone["counter"])
+        # zone has spare capacity, and the edge?
+        if conn.edge is not None:
+            candedge = conn.edge.nodenames
+            cons_edges: ConstraintEdge = constraints.get(tick, {}).get("edges", {})
+            edge = cons_edges.get(candedge)
+            if edge and edge["capacity"] == edge["counter"]:
+                print(candedge, edge)
+                return True
+        # both has capacity
+        return False
 
     def _can_transition(self, current: Step, connection: Connection) -> bool:
         zone = connection.zone

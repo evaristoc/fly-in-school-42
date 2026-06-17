@@ -63,7 +63,7 @@ class StartZone(Zone):
             color="green",
             max_drones=1,
             weighted_cost=0,
-            max_wait=99999
+            max_wait=99999999999
         )
 
 
@@ -72,9 +72,9 @@ class EndZone(Zone):
     def defaults(cls) -> ValidZoneMetadata:
         return ValidZoneMetadata(
             color="yellow",
-            max_drones=1,
+            max_drones=99999999999,
             weighted_cost=1,
-            max_wait=99999
+            max_wait=99999999999
         )
 
 
@@ -121,7 +121,7 @@ class BlockedZone(Zone):
             zone="blocked",
             color="red",
             max_drones=0,
-            weighted_cost=99999,
+            weighted_cost=9999999999,
             max_wait=0
         )
 

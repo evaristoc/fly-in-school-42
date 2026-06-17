@@ -1,10 +1,10 @@
-from collections import defaultdict
 import random
-from typing import List, Dict, Set
+from typing import List, Dict
 from ..pathfinder.pathfinder import Pathfinder
 from ..structures.roadmap_entitites import RoadMap
+from ..structures.constraints import Constraints, ConstraintZone, ConstraintEdge, ConstrMap
 from ...model.agent.Agent import Agent
-from ...model.graph.Graph import Zone, Edge, StartZone
+from ...model.graph.Graph import StartZone, EndZone
 
 
 class PriorityPlanner:
@@ -17,13 +17,7 @@ class PriorityPlanner:
     """
     def __init__(self, agents: List[Agent]) -> None:
         self.agents = agents
-        # Master Schedule: { tick: { agent_id:
-        # { "zones": {Zone}, "edges": {Zone} } } }
-        # TODO : might it be Connections instead?
-        CONSTR_T = Dict[int, Dict[int, Dict[str, Set[Zone | Edge]]]]
-        self.master_constraints: CONSTR_T = defaultdict(
-            lambda: defaultdict(lambda: {"zones": set(), "edges": set()})
-        )
+        self.master_constraints: ConstrMap = {}
 
     def solve(self,
               pathfinder: Pathfinder,
@@ -78,30 +72,37 @@ class PriorityPlanner:
         if len(roadmap.states) == 0:
             raise Exception("roadmap states are empty")
         for tick, (parent_z, current_z) in roadmap.states.items():
+            """
+            # TODO : see below
             # CAPACITY FIX: If the drone is still in the StartZone,
             # don't block it for others. This allows the 'queue' to form.
-            if isinstance(current_z, StartZone):
+            # NONE RESTRICTION AT SINK: I am assuming no restriction to get to
+            # the end, but could be some, and then the sim should stop...
+            """
+            if isinstance(current_z, StartZone) or isinstance(current_z, EndZone):
                 continue
-            for other_agent in self.agents:
-                if other_agent.agent_id == agent_id:
-                    continue
-                # TODO : might change from dicts of zones or edges to Connection?
-                # Block the position
-                constraints: Dict[str, Set[Zone | Edge]] =\
-                    self.master_constraints[tick][other_agent.agent_id]
-                constraints["zones"].add(current_z)  # was current
-                # Block the swap (Edge constraint)
-                if parent_z != current_z:  # was just parent_z, no comparison
-                    constraints["edges"].add(current_z)  # was parent
-
-"""
-constraints could be Connections
-The problem is the swap issue: the Connection reads for me_zone
-It is the zone the agent will fly to that is now occupying
-In this project, edges is of form zone and meand the edge which destination zone will be occupied at that tick, so for capacity 1, that edge will be then unavailable
-
-A possible but not performing solution would be to use the Connection as constraint
-Once the agent decides which zone to occupy at time tick:
-- count all the Connection zones with zone of name "candidate" (I will need to either keep a counter reference of some sort to track the number of zones, or recount for each time)
-- 
-"""
+            # constraints: Constraints =\
+            #     self.master_constraints.get(tick, {})
+            if tick not in self.master_constraints:
+                self.master_constraints[tick] = {"zones": {}, "edges": {}}
+            constraintszones: ConstraintZone = self.master_constraints[tick].get("zones")
+            if current_z not in constraintszones:  # was current
+                constraintszones[current_z.name] = {
+                    "capacity": current_z.max_drones,
+                    "counter": 0}
+            if constraintszones[current_z.name]["counter"] < constraintszones[current_z.name]["capacity"]:
+                constraintszones[current_z.name]["counter"] += 1
+            # Block the swap or the simulatenous use (Edge constraint)
+            if parent_z != current_z:  # was just parent_z, no comparison
+                constraintsedges: ConstraintEdge = self.master_constraints[tick].get("edges")
+                for c in current_z.neighbours:
+                    if c.edge is None:
+                        continue
+                    if parent_z.name in c.edge.nodenames:
+                        if c.edge.nodenames not in constraintsedges:
+                            constraintsedges[c.edge.nodenames] = {
+                                "capacity": c.edge.max_link_capacity,
+                                "counter": 0}
+                        if constraintsedges[c.edge.nodenames]["counter"] < constraintsedges[c.edge.nodenames]["capacity"]:
+                            constraintsedges[c.edge.nodenames]["counter"] += 1  # was parent
+        # print(self.master_constraints)
