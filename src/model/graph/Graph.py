@@ -97,7 +97,7 @@ class PriorityZone(Zone):
             zone="priority",
             color="blue",
             max_drones=1,
-            weighted_cost=.8,
+            weighted_cost=.3,
             max_wait=20
         )
 
@@ -276,12 +276,18 @@ class Graph:
         while queue:
             current = queue.pop(0)
             if current:
-                current_hop = hop_map[current]
+                current_hop = hop_map[current] 
                 for conn in current.neighbours:
                     if conn:
                         neighbor = conn.zone
-                        if hop_map[neighbor] > current_hop + 1:
-                            hop_map[neighbor] = current_hop + 1
+                        # OJO: it was 1 before being neighbor.max_drones/(1 + [n.edge.max_link_capacity for n in neighbor.neighbours if current.name in n.edge.nodenames][0])!
+                        cost = 0
+                        if conn.edge is not None:
+                            cost = min(conn.edge.max_link_capacity, conn.zone.max_drones)
+                        else:
+                            cost = conn.zone.max_drones
+                        if hop_map[neighbor] > current_hop + cost:
+                            hop_map[neighbor] = current_hop + cost
                             queue.append(neighbor)
         if hop_map:
             self.hop_map = hop_map
