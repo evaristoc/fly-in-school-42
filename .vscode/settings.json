@@ -1,0 +1,15 @@
+{
+    "editor.fontSize": 16,
+    "window.zoomLevel": 1.2,
+    "editor.hover.enabled": "off",
+    "gitlens.currentLine.enabled": false,
+    "terminal.integrated.fontSize": 11,
+    "terminal.integrated.fontWeight": "500",
+    "terminal.integrated.fontWeightBold": "700",
+    "editor.formatOnSave": true,
+    "gitlens.codeLens.enabled": false,
+    "workbench.activityBar.location": "default",
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
+    "editor.detectIndentation": false
+}
