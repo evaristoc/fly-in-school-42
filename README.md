@@ -34,4 +34,5 @@ Other topic for the articles could consist in the discussion of real-world appli
 
 # In this repository:
 
-[v1-hop_based folder](./v1-hop_based): A presentation of a **priority based planning** with simplified capacity and a Bellman-Ford-ish heuristic based on a "unitarian" cost ("hops"). 
+* [v1-hop_based folder](./v1-hop_based): A presentation of a **priority based planning** with _simplified capacity_ (capacity always 1). Drone routes are estimated using the **A\* algorithm** that takes the costs of the heuristics from a table built using a **Bellman-Ford**-ish based on a "unitarian" cost ("hops").
+[v2-capacity_heuristic folder](./v2-capacity_heuristic): The same **priority based planning** as before but with a projecdt featuring capacity handling. Similarly, this one also makes use of a table built from Bellman-Ford-ish but based on a custom **capacity-centric** cost calculation inspired from **min-cost max-flow** rationale.
