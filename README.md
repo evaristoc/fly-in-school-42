@@ -6,11 +6,9 @@ However, I have found that the core problem this exercise simulates mirrors high
 
 My purpose, then, is to explore and discuss this project through a broader lens—focusing on the additional skills we can learn to help us grasp the real-world complexities of these kind of engineering challenge.
 
-To find those techniques, I will research various methodologies found in available literature and explore existing repositories, including those kindly made public by fellow School 42 students.
+To accomplish that goal I will research various methodologies found in available literature and explore existing repositories, including those kindly made public by fellow School 42 students.
 
-Please note that my quest is not intended to judge or critize the work by others; rather, it is about creating a curated selection of what appears to be best practices for this kind of problem.
-
-> This project is an _opinionated best effort_, intended for curation, discussion and basic reference.
+> Please note that my quest is not intended to judge or critize the work by others; rather, it is about an _opinionated best effort_ to create a curated selection of what appears to be best practices for this kind of problem.
 
 I expect to document my quest on two different places:
 - this repository, 
