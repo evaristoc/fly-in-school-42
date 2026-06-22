@@ -6,7 +6,7 @@ However, I have found that the core problem this exercise simulates mirrors high
 
 My purpose, then, is to explore and discuss this project through a broader lens—focusing on the additional skills we can learn to help us grasp the real-world complexities of these kind of engineering challenge.
 
-> This project is a _opinionated best effort_, intended for curation, discussion and basic reference.
+> This project is an _opinionated best effort_, intended for curation, discussion and basic reference.
 
 I expect to document my quest on two different places:
 - this repository, 
@@ -32,7 +32,7 @@ Each folder could contain a README.md dedicated to the discussion of the version
 
 |Folder|Hightlights|
 |------|-----------|
-|[v1-hop_based folder](./v1-hop_based)|A solution based on the **priority planning** methodology with _simplified capacity_ (capacity always 1). Drone routes are estimated using the **A\* algorithm**, which takes the heuristic costs based on an "unitarian" cost ("hop counts") from a table pre-built using a **Bellman-Ford**-ish algo.|
+|[v1-hop_based folder](./v1-hop_based)|A solution based on the **priority planning** methodology with _simplified capacity_ (capacity always 1). Individual drone (aka agent) routes are estimated using the **A\* algorithm**, which takes hop-based heuristic costs from a "distance" table built using a **Bellman-Ford**-ish algo.|
 |[v2-capacity_heuristic folder](./v2-capacity_heuristic)|The same **priority planning** method as before but featuring _capacity handling_. Similarly, this one also makes use of a "distance" table built from a Bellman-Ford-ish algo, but with heuristic costs based on a custom **capacity-centric** calculation inspired in the **min-cost max-flow** rationale.|
 
 
