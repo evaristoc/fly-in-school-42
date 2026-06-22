@@ -34,4 +34,4 @@ Other topic for the articles could consist in the discussion of real-world appli
 
 # In this repository:
 
-[v1-hop_based folder](./v1-hop_based): A presentation of a **priority based planning** with simplified capacity and an Bellman-Ford-ish heuristic based on a unit-based cost ("hops"). 
+[v1-hop_based folder](./v1-hop_based): A presentation of a **priority based planning** with simplified capacity and a Bellman-Ford-ish heuristic based on a "unitarian" cost ("hops"). 
