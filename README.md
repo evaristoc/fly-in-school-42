@@ -6,6 +6,10 @@ However, I have found that the core problem this exercise simulates mirrors high
 
 My purpose, then, is to explore and discuss this project through a broader lens—focusing on the additional skills we can learn to help us grasp the real-world complexities of these kind of engineering challenge.
 
+To find those techniques, I will research various methodologies found in available literature and explore existing repositories, including those kindly made public by fellow School 42 students.
+
+Please note that my quest is not intended to judge or critize the work by others; rather, it is about creating a curated selection of what appears to be best practices for this kind of problem.
+
 > This project is an _opinionated best effort_, intended for curation, discussion and basic reference.
 
 I expect to document my quest on two different places:
@@ -14,17 +18,13 @@ I expect to document my quest on two different places:
 
 ## What you will find on this repository
 
-This repository will be dedicated to deep into different ways to approach the Fly-In project and discuss the techniques on the light on existing formal knowledge.
+This repository will be dedicated to host the different ways to approach the Fly-In project that IMO tend to offer the most relevant learnings, and discuss the techniques on the light on existing formal knowledge.
 
-The repository will include **different solutions for the fly-in project using different techniques**.
+The various solutions will be documented on dedicated **folders** and might be based on solutions provided by others. To ensure originality and respect other people's code, I will try to replicate their approaches by writing **my own versions**.
 
-The solutions will be documented as **folders**.
+Each folder could contain a README.md with a discussion of the version and its origin, crediting the source when possible.
 
-To find those techniques, I will research various methodologies found in available literature and explore existing repositories, including those kindly made public by fellow School 42 students.
-
-Please note that my quest is not intended to judge or critize the work by others; rather, it is about creating a curated selection of what appears to be best practices for this kind of problem. To ensure originality and respect other people's code, I will try to replicate their approaches by writing **my own versions**.
-
-Each folder could contain a README.md dedicated to the discussion of the version and its origin, crediting the source when possible.
+When not able to make my own version, I will rather discuss the project in a dedicated article instead.
 
 > Be aware that the whole repository is a live one, so structure and or content could change without notice.
 
