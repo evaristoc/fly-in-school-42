@@ -218,9 +218,10 @@ class Manager:
                                 nam = current_zone.name
                                 a["path"].append(next((n["id"] for n in j
                                                        if n["label"] == nam)))
-                    if len(a["path"]) < minlen + self.graph.nb_drones:
-                        rest = minlen + self.graph.nb_drones - len(a["path"])
-                        a["path"] = a["path"] + [a["path"][-1]] * rest
+                    # TODO this "correction" is now adding too many steps when all agents finish simultaneously
+                    # if len(a["path"]) < minlen + self.graph.nb_drones:
+                    #     rest = minlen + self.graph.nb_drones - len(a["path"])
+                    #     a["path"] = a["path"] + [a["path"][-1]] * rest
                     jsondata["agents"].append(a)
         print(jsondata)
 

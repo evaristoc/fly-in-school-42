@@ -99,12 +99,12 @@ class Pathfinder:
         # return g_cost + self.heuristic_weight * h
         """
         Compute the A*/forward cost using g_cost (actual cost so far)
-        plus a timeless hop-based heuristic to the goal.
+        plus a timeless capacity-centric bottleneck-based heuristic to the goal.
         """
-        # Access hop_map from the graph associated with this pathfinder
-        if graph is None or graph.hop_map is None:
+        # Access reversecost_map from the graph associated with this pathfinder
+        if graph is None or graph.reversecost_map is None:
             return float('inf')
-        hops_to_goal = graph.hop_map.get(zone, float('inf'))
+        hops_to_goal = graph.reversecost_map.get(zone, float('inf'))
 
         # prio PrioZones
         if isinstance(zone, PriorityZone):
@@ -132,10 +132,10 @@ class Pathfinder:
             return None
         step_options = current.zone.neighbours
 
-        # Case: restricted zone and waiting not done
-        # should skip any other options if waiting time not over
-        # notice that I requires to put them in the heap as they are
-        # valid states in the ticking
+        # Case: restricted zone and waiting that have agents at tick + 1
+        # should skip any other routes if waiting time not over.
+        # Notice that I requires to put them in the heap as they are
+        # valid states at next ticking
         if isinstance(current.zone, RestrictedZone) \
                 and current.wait < current.zone.max_wait - 1:
             # Only wait in place; do not consider other neighbors
@@ -171,7 +171,6 @@ class Pathfinder:
             # unfeasible / forbidden == banned states at time `tick`
             if state in unfeasible:
                 continue
-            # TODO : for _is_forbidden, better connection than next_zone
             if self._is_forbidden(next_tick, connection, constraints):
                 # print(agent_id, state)
                 # print("unfeasible", agent_id, unfeasible)
@@ -185,7 +184,7 @@ class Pathfinder:
             # include cases to which prioplanner doesn't have access
             if not self._can_transition(current, connection):
                 continue
-            #print("selected", agent_id, current, state)
+            # print("selected", agent_id, current, state)
             visited.add(state)
             step: Step | None = None
             # print("selected candidate", agent_id, next_tick, connection.zone.name)
@@ -204,32 +203,13 @@ class Pathfinder:
     # -------------------------
     # Rules (clean separation)
     # -------------------------
-
-    # def _is_forbidden(
-    #     self,
-    #     tick: int,
-    #     agent_id: int,
-    #     zone: Zone,
-    #     constraints: Dict[int, Dict[int, Dict[str, List[Zone | Edge]]]],
-    # ) -> bool:
-    #     return zone in constraints.get(tick, {}) \
-    #                               .get(agent_id, {}) \
-    #                               .get("zones", list) or \
-    #                     zone in constraints.get(tick, {}) \
-    #                               .get(agent_id, {}) \
-    #                               .get("edges", list)
-    
+  
     def _is_forbidden(
         self,
         tick: int,
         conn: Connection,
         constraints: ConstrMap,
     ) -> bool:
-        # TODO 
-        # is not a set: it is a dict of zones / edges
-        # with counted capacity
-        # TODO 
-        # this should replace is_forbidden
         candzone: str = conn.zone.name
         candedge: None | tuple = None
         # does the zone has spare capacity?
@@ -247,7 +227,7 @@ class Pathfinder:
             if edge and edge["capacity"] == edge["counter"]:
                 print(candedge, edge)
                 return True
-        # both has capacity
+        # both has capacity: is not forbidden
         return False
 
     def _can_transition(self, current: Step, connection: Connection) -> bool:
