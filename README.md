@@ -33,7 +33,7 @@ When not able to make my own version, I will rather discuss the project in a ded
 |Folder|Hightlights|
 |------|-----------|
 |[v1-hop_based folder](./v1-hop_based)|A solution based on the **priority planning** methodology with _simplified capacity_ (capacity always 1). Individual drone (aka agent) routes are estimated using the **A\* algorithm**, which takes hop-based heuristic costs from a "distance" table built using a **Bellman-Ford**-ish algo.|
-|[v2-capacity_heuristic folder](./v2-capacity_heuristic)|The same **priority planning** method as before but featuring _capacity handling_. Similarly, this one also makes use of a "distance" table built from a Bellman-Ford-ish algo, but with heuristic costs based on a custom **capacity-centric** calculation inspired in the **min-cost max-flow** rationale.|
+|[v2-capacity_heuristic_low_traffic folder](./v2-capacity_heuristic_low_traffic)|The same **priority planning** method as before but featuring _capacity handling_. Similarly, this one also makes use of a "distance" table built from a Bellman-Ford-ish algo, but with heuristic costs based on a custom **capacity-centric** calculation inspired in the **min-cost max-flow** rationale, but one that favour low capacity / low traffic regions.|
 
 
 ## What you will find in the articles
