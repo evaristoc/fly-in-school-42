@@ -6,7 +6,7 @@ However, I have found that the core problem this exercise simulates mirrors high
 
 My purpose, then, is to explore and discuss this project through a broader lens—focusing on the additional skills we can learn to help us grasp the real-world complexities of these kind of engineering challenge.
 
-> This project is a _opinionated best effort_, intended for curation, discussion and basic reference.
+> This project is an _opinionated best effort_, intended for curation, discussion and basic reference.
 
 I expect to document my quest on two different places:
 - this repository, 
