@@ -1,0 +1,56 @@
+#############
+# common files
+#############
+# secrets #
+.env
+.env.production
+.env.development
+*.private_key
+id_rsa
+id_ed25519
+
+build/*
+dist/*
+
+.github/*
+
+# vscode #
+.vscode/*
+
+#############
+# when using VM
+#############
+.vagrant/*
+Vagrantfile
+ubuntu-*.log
+
+############
+# python related
+############
+.venv/*
+__pycache__
+.mypy_cache
+poetry.lock
+
+
+# log files #
+*.egg-info/
+
+###########
+# C related
+###########
+*.o
+*.out
+
+############
+# javascript related
+############
+node_modules/*
+
+###########
+# other folders
+###########
+maps/
+references/*
+testing/*
+.sfdx/
