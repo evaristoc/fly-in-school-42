@@ -33,28 +33,43 @@ class Pathfinder:
         entry_time: int,
         constraints: ConstrMap,
     ) -> Optional[RoadMap]:
+        
+        # NOTE: This an IMPORTANT one:
+        """
+        This part of the project has been modified to resemble a Dijkstra
+        """
 
         open_set: List[Step] = []
         visited: Set[Tuple[str, int]] = set()
         unfeasible: Set[Tuple[str, int]] = set()
         counter = count()
+        best_cost: dict[tuple[str, int], float] = {}
 
         start = self._init_step(graph, entry_time, counter)
         if not start:
             raise Exception("Could not create first step")
         heapq.heappush(open_set, start)
-
+        best_cost[(start.zone.name, start.tick)] = start.f_cost
         max_ticks = len(graph.zones) * self.time_horizon_factor
 
         while open_set:
             current = heapq.heappop(open_set)
-
             if current.zone == graph.goal:
                 return self._build_roadmap(current, agent_id)
 
             if current.tick >= max_ticks:
                 continue
-
+            state = (current.zone.name, current.tick)
+            # visited keeps track of states we've already fully processed in the search.
+            # It stays Dijsktra as long as costs stay non-negative and additive
+            # The first time we pop a state from the priority queue,
+            # we’ve already found the cheapest way to reach that node, so we can ignore all the
+            # other options that have been pushed for that (node, tick) tuple into the priority queue.
+            # That reduces the number of re-processing the same time-expanded states coming from
+            # different paths and improves performance substantially.
+            if state in visited:
+                continue
+            visited.add(state)
             self._expand(
                 current,
                 graph,
@@ -64,6 +79,7 @@ class Pathfinder:
                 visited,
                 unfeasible,
                 counter,
+                best_cost
             )
 
         return None
@@ -83,41 +99,31 @@ class Pathfinder:
                 f_cost=0.0,
             )
         if isinstance(step.zone, Zone) and isinstance(graph.goal, Zone):
-            step.f_cost = self._compute_f_cost(graph, step.g_cost,
-                                               step.zone, graph.goal)
             return step
         else:
             return None
 
     def _compute_f_cost(self,
-                        graph: Graph,
-                        g_cost: float,
                         zone: Zone,
-                        goal: Zone) -> float:
-        # h = self.heuristic(zone, goal)
-        # # once in the game, can not come back
-        # if isinstance(zone, StartZone) and g_cost > 0:
-        #     return float('inf')
-        # return g_cost + self.heuristic_weight * h
+                        old_f_cost: float) -> float:
         """
-        Compute the A*/forward cost using g_cost (actual cost so far)
-        plus a timeless capacity-centric bottleneck-based heuristic to the goal.
+        REMEMBER: Even if using something like Dijkstra-ish algo,
+        I dont need to compare 'distances' because the priority
+        queue is already doing that work form me. Just almost forgot
+        that the Step is a link list and that I will have more than
+        one Step instance, only that I will be checking the new tail (?)
+        to compare for costs, so it is only about updating the new cost
+        for this STEP INSTANCE (again, the prio queue then will put the
+        one with the lowest cost first) 
         """
-        # Access reversecost_map from the graph associated with this pathfinder
-        if graph is None or graph.reversecost_map is None:
-            return float('inf')
-        hops_to_goal = graph.reversecost_map.get(zone, float('inf'))
-
-        # prio PrioZones
-        if isinstance(zone, PriorityZone):
-            hops_to_goal = hops_to_goal - 1 + zone.weighted_cost
-
         # Once in the game, cannot return to start zone
-        if isinstance(zone, StartZone) and g_cost > 0:
+        if isinstance(zone, StartZone):
+            return 0
+        # all other zones are valid
+        if not isinstance(zone, BlockedZone):
+            return old_f_cost + (zone.weighted_cost if isinstance(zone, PriorityZone) else 1)
+        else:
             return float('inf')
-
-        # f = g + h, h is just hop count (forward incentive)
-        return g_cost + self.heuristic_weight * hops_to_goal
 
     def _expand(
         self,
@@ -129,15 +135,12 @@ class Pathfinder:
         visited: Set[Tuple[str, int]],
         unfeasible: Set[Tuple[str, int]],
         counter: Iterator[int],
+        best_cost: dict[tuple[str, int], float]
     ) -> None:
         if current is None or current.zone is None:
             return None
         step_options = current.zone.neighbours
 
-        # Case: restricted zone and waiting that have agents at tick + 1
-        # should skip any other routes if waiting time not over.
-        # Notice that I requires to put them in the heap as they are
-        # valid states at next ticking
         if isinstance(current.zone, RestrictedZone) \
                 and current.wait < current.zone.max_wait - 1:
             # Only wait in place; do not consider other neighbors
@@ -148,18 +151,17 @@ class Pathfinder:
                                    f"found for {current.zone.name}")
 
             next_tick = current.tick + 1
-
-            if (connection.zone.name, next_tick) not in visited:
-                visited.add((connection.zone.name, next_tick))
-                resstep: Step | None = None
-                if graph is not None and graph.goal is not None:
-                    resstep = self._build_step(graph,
-                                               current,
-                                               connection, graph.goal, counter)
-                if resstep is not None:
-                    heapq.heappush(open_set, resstep)
-                else:
-                    raise Exception("Could not make a restricted waiting step")
+            resstep: Step | None = None
+            if graph is not None and graph.goal is not None:
+                resstep = self._build_step(graph,
+                                           current,
+                                           connection,
+                                           graph.goal,
+                                           counter)
+            if resstep is not None:
+                heapq.heappush(open_set, resstep)
+            else:
+                raise Exception("Could not make a restricted waiting step")
 
             return None  # short-circuit: do not expand any other neighbour
         for connection in step_options:
@@ -169,7 +171,9 @@ class Pathfinder:
             # print("check tick", agent_id, next_tick)
 
             state = (next_zone.name, next_tick)
-
+            new_cost = self._compute_f_cost(next_zone, current.f_cost)
+            if new_cost > best_cost.get(state, float('inf')):
+                continue
             # unfeasible / forbidden == banned states at time `tick`
             if state in unfeasible:
                 continue
@@ -178,28 +182,27 @@ class Pathfinder:
                 # print("unfeasible", agent_id, unfeasible)
                 unfeasible.add(state)
                 continue
-            # visited == not banned, just redundant
-            if state in visited:
-                # print("visited", agent_id, visited)
-                continue
             # can_transition == temporary or permanent (not) evaluable state
             # include cases to which prioplanner doesn't have access
             if not self._can_transition(current, connection):
                 continue
             # print("selected", agent_id, current, state)
-            visited.add(state)
             step: Step | None = None
             # print("selected candidate", agent_id, next_tick, connection.zone.name)
             if graph is not None and graph.goal is not None:
-                step = self._build_step(graph, current,
-                                        connection, graph.goal, counter)
+                step = self._build_step(graph,
+                                        current,
+                                        connection,
+                                        graph.goal,
+                                        counter)
             if step is not None:
                 if step.f_cost == float("inf"):
                     unfeasible.add(state)
                     continue
             else:
                 raise Exception("Could not make a step")
-
+            assert step.f_cost == new_cost
+            best_cost[state] = new_cost
             heapq.heappush(open_set, step)
 
     # -------------------------
@@ -271,20 +274,15 @@ class Pathfinder:
         zone = connection.zone
 
         wait = current.wait + 1 if zone == current.zone else 0
-
-        g_cost = current.g_cost + zone.weighted_cost
-
         step = Step(
             zone=zone,
             tick=current.tick + 1,
-            g_cost=g_cost,
+            g_cost=0,
             parent=current,
             wait=wait,
             counter=next(counter),
-            f_cost=0.0,
+            f_cost=self._compute_f_cost(zone, current.f_cost),
         )
-
-        step.f_cost = self._compute_f_cost(graph, g_cost, zone, goal)
         return step
 
     # -------------------------
