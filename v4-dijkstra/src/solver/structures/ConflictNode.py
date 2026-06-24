@@ -13,28 +13,26 @@ class Conflict:
     pass
 
 class VertexConflict(Conflict):
-    agent1: Agent
-    agent2: Agent
+    agent: Agent
     zone: Zone
     tick: int
 
 
 class EdgeConflict(Conflict):
-    agent1: Agent
-    agent2: Agent
+    agent: Agent
     zone_from: Zone
     zone_to: Zone
     tick: int
 
 class CTNode:
-    def __init__(self, parent: Optional[CTNode] = None, agents: List[Agent] = []):
+    def __init__(self, parent: Optional[CTNode] = None, conflict: Conflict | None = None):
         self.roadmaps: RoadMap | None = None
         self.parent = parent
+        self.conflict: Conflict | None = conflict
         self.cost: float = float('inf')
         self.left: Optional[CTNode] = None
         self.right: Optional[CTNode] = None
         self.constraints: ConstrMap | None = None
-        self.agents = agents
         if self.parent:
             self.constraints = deepcopy(self.parent.constraints)
 
@@ -67,21 +65,26 @@ class CTNode:
         if conflict.tick not in self.constraints:
             self.constraints[conflict.tick] = {"zones": {}, "edges": {}}
         if isinstance(conflict, VertexConflict):
-            if conflict.zone not in self.constraints[conflict.tick]["zones"]:
-                self.constraints[conflict.tick]["zones"][conflict.zone] = {"capacity": conflict.zone.max_drones, "agents":{}}
-            if len(self.constraints[conflict.tick]["zones"][conflict.zone]["agents"]) < self.constraints[conflict.tick]["zones"][conflict.zone]["capacity"]:
-                self.constraints[conflict.tick]["zones"][conflict.zone]["agents"].add(self.agent2)
+            zconstrs: ConstraintZone = self.constraints[conflict.tick]["zones"]
+            zname: str = conflict.zone.name
+            if zname not in zconstrs:
+                zconstrs[zname] = {"capacity": conflict.zone.max_drones, 
+                                   "agents": {}}
+            if len(zconstrs[zname]["agents"]) < zconstrs[zname]["capacity"]:
+                zconstrs[zname]["agents"].add(self.agent1)
         if isinstance(conflict, EdgeConflict):
             edge: Edge | None = None
             for n in conflict.zone_from.neighbours:
                 if n.zone == conflict.zone_to:
                     edge = n.edge
-            if edge.nodenames not in self.constraints[conflict.tick]["edges"].keys():
-                self.constraints[conflict.tick]["edges"][edge.nodenames] = {
-                            "capacity": c.edge.max_link_capacity,
-                            "agents": {}}
-            if len(self.constraints[conflict.tick]["edges"][edge.nodenames]["agents"]) < self.constraints[conflict.tick]["edges"][edge.nodenames]["capacity"]:
-                self.constraints[conflict.tick]["edges"][edge.nodenames]["agents"].add(agent2)
+            econstrs: ConstraintEdge = self.constraints[conflict.tick]["edges"]
+            ename: tuple = edge.nodenames
+            if ename not in econstrs:
+                econstrs[ename] = {
+                                "capacity": edge.max_link_capacity,
+                                "agents": {}}
+            if len(econstrs[ename]["agents"]) < econstrs[ename]["capacity"]:
+                econstrs[ename]["agents"].add(self.agent1)
 
     def update_solutions(self) -> None:
         for agent in self.agents:
