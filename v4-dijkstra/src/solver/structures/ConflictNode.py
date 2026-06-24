@@ -25,10 +25,10 @@ class EdgeConflict(Conflict):
     tick: int
 
 class CTNode:
-    def __init__(self, parent: Optional[CTNode] = None, conflict: Conflict | None = None):
+    def __init__(self, allagents: List[Agent], parent: Optional[CTNode] = None):
         self.roadmaps: RoadMap | None = None
         self.parent = parent
-        self.conflict: Conflict | None = conflict
+        self.allagents: List[Agent] = allagents
         self.cost: float = float('inf')
         self.left: Optional[CTNode] = None
         self.right: Optional[CTNode] = None
@@ -62,6 +62,13 @@ class CTNode:
     def add_constraints(self, conflict: Conflict) -> None:
         if not conflict:
             return
+        if not self.parent:
+            return None
+        agent: Agent
+        if self.parent.left is self:
+            agent = conflict.agent_1
+        else:
+            agent = conflict.agent_2
         if conflict.tick not in self.constraints:
             self.constraints[conflict.tick] = {"zones": {}, "edges": {}}
         if isinstance(conflict, VertexConflict):
@@ -69,9 +76,8 @@ class CTNode:
             zname: str = conflict.zone.name
             if zname not in zconstrs:
                 zconstrs[zname] = {"capacity": conflict.zone.max_drones, 
-                                   "agents": {}}
-            if len(zconstrs[zname]["agents"]) < zconstrs[zname]["capacity"]:
-                zconstrs[zname]["agents"].add(self.agent1)
+                                   "agents": set()}
+            zconstrs[zname]["agents"].add(agent.agent_id)
         if isinstance(conflict, EdgeConflict):
             edge: Edge | None = None
             for n in conflict.zone_from.neighbours:
@@ -82,18 +88,18 @@ class CTNode:
             if ename not in econstrs:
                 econstrs[ename] = {
                                 "capacity": edge.max_link_capacity,
-                                "agents": {}}
-            if len(econstrs[ename]["agents"]) < econstrs[ename]["capacity"]:
-                econstrs[ename]["agents"].add(self.agent1)
+                                "agents": set()}
+            econstrs[ename]["agents"].add(agent.agent_id)
 
     def update_solutions(self) -> None:
-        for agent in self.agents:
+        success: bool = True
+        for agent in self.allagents:
             # The agent plans a path around all higher-priority paths
             roadmap = agent.plan(agent.pathfinder, self.constraints)
             if roadmap is None:
                 success = False
                 break
-            self.roadmap[agent.agent_id] = roadmap
+            self.roadmaps[agent.agent_id] = roadmap
         if success:
             return
         else:
