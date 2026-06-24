@@ -28,6 +28,7 @@ class CTNode:
     def __init__(self, allagents: List[Agent], parent: Optional[CTNode] = None):
         self.roadmaps: RoadMap | None = None
         self.parent = parent
+        self.agent: Agent | None = None
         self.allagents: List[Agent] = allagents
         self.cost: float = float('inf')
         self.left: Optional[CTNode] = None
@@ -64,11 +65,12 @@ class CTNode:
             return
         if not self.parent:
             return None
-        agent: Agent
         if self.parent.left is self:
-            agent = conflict.agent_1
+            self.agent = conflict.agent_1
         else:
-            agent = conflict.agent_2
+            self.agent = conflict.agent_2
+        if not self.agent:
+            raise Exception("ERROR at Conflict Node: No agent was created. Stopping.")
         if conflict.tick not in self.constraints:
             self.constraints[conflict.tick] = {"zones": {}, "edges": {}}
         if isinstance(conflict, VertexConflict):
@@ -77,7 +79,7 @@ class CTNode:
             if zname not in zconstrs:
                 zconstrs[zname] = {"capacity": conflict.zone.max_drones, 
                                    "agents": set()}
-            zconstrs[zname]["agents"].add(agent.agent_id)
+            zconstrs[zname]["agents"].add(self.agent.agent_id)
         if isinstance(conflict, EdgeConflict):
             edge: Edge | None = None
             for n in conflict.zone_from.neighbours:
@@ -89,21 +91,21 @@ class CTNode:
                 econstrs[ename] = {
                                 "capacity": edge.max_link_capacity,
                                 "agents": set()}
-            econstrs[ename]["agents"].add(agent.agent_id)
+            econstrs[ename]["agents"].add(self.agent.agent_id)
 
-    def update_solutions(self) -> None:
-        success: bool = True
-        for agent in self.allagents:
-            # The agent plans a path around all higher-priority paths
-            roadmap = agent.plan(agent.pathfinder, self.constraints)
+    def update_solutions(self, pathfinder: Pathfinder, agents: List[Agent] | None = None) -> bool:
+        if not agents:
+            return False
+        if agents is None:
+            agents = [self.agent]
+        for agent in agents:
+            roadmap = agent.plan(pathfinder, self.constraints)
             if roadmap is None:
-                success = False
-                break
-            self.roadmaps[agent.agent_id] = roadmap
-        if success:
-            return
-        else:
-            raise Exception("failed to create roadmap")
+                return False
+            else:
+                self.roadmaps[agent.agent_id] = roadmap
+                return True
+        return False
 
     def calc_sol_cost(self) -> float:
         for roadmap in self.roadmaps.values():
