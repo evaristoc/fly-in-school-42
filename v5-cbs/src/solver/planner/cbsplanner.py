@@ -1,7 +1,7 @@
 from __future__ import annotations
 import heapq
 from collections import defaultdict
-from typing import List, Optional
+from typing import List, Optional, Dict
 from ..pathfinder.pathfinder import Pathfinder
 from ..structures.ConflictNode import CTNode, Tree, Conflict, VertexConflict, EdgeConflict, State
 from ..structures.roadmap_entitites import RoadMap
@@ -24,10 +24,12 @@ class CBSPlanner:
         self.tree: Optional[Tree] = None
         self.bisect: State = 'WAIT'
 
-    def solve(self):
-        self._best_first()
+    def solve(self) -> Dict[RoadMap]:
+        return self._best_first()
 
     def _best_first(self) -> RoadMap:
+        # TODO found circular, infinite loops
+        # TODO one case was immediately giving an error before even running
         counter = 0
         self._add_ctnode()
         if self.tree:
@@ -41,13 +43,19 @@ class CBSPlanner:
             while Q:
                 _, _, node = heapq.heappop(Q)
                 conflict = self.find_conflict(node)
-                # print(f"[CBS] node={id(node)} conflict={conflict.zone.name} t={conflict.tick}")
+                #print(f"[CBS] node={id(node)} conflict={conflict.zone.name} t={conflict.tick}")
+                #print(f"[CBS] Q len {len(Q)}")
                 if conflict:
                     left_node = CTNode(self.agents, node)
                     node.left = left_node
                     # print("cbsplanner:", id(node))
                     # print("cbsplanner left:", id(node.left))
                     node.left.add_constraint(conflict)
+                    self.pathfinder = Pathfinder(
+                        heuristic=None,          # or a specific Heuristic subclass
+                        heuristic_weight=1.0,    # lambda factor
+                        time_horizon_factor=3    # default time horizon multiplier
+                    )
                     if node.left.update_solution(self.pathfinder, self.agents):
                         node.left.calc_sol_cost()
                         counter += 1
@@ -57,6 +65,11 @@ class CBSPlanner:
                     right_node = CTNode(self.agents, node)
                     node.right = right_node
                     node.right.add_constraint(conflict)
+                    self.pathfinder = Pathfinder(
+                        heuristic=None,          # or a specific Heuristic subclass
+                        heuristic_weight=1.0,    # lambda factor
+                        time_horizon_factor=3    # default time horizon multiplier
+                    )
                     if node.right.update_solution(self.pathfinder, self.agents):
                         node.right.calc_sol_cost()
                         counter += 1
@@ -74,6 +87,7 @@ class CBSPlanner:
             self.tree = CTNode(self.agents)
 
     def find_conflict(self, node: CTNode) -> Optional[Conflict] | None:
+        # TODO finding the edge capacity conflict should be also included, probably related to the conflicting Node
         # Determine the time horizon (longest path)
         #if not node or (node.parent is not None and not node.agent_id) or not node.solution:
         if not node or not node.solution:

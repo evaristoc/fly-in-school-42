@@ -193,7 +193,7 @@ class Manager:
                 jsondata["edges"].append(e)
                 jsondata["agents"] = []
                 minlen = 0
-                for agent_id, roadmap in self.solution.items():
+                for agent_id, roadmap in self.roadmaps.items():
                     a: Dict[str, Any] = {}
                     a["id"] = agent_id
                     a["name"] = f"agent {agent_id}"

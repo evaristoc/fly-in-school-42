@@ -15,6 +15,32 @@ class Conflict:
     pass
 
 
+def print_solution(solution: dict):
+    print("\n=== CBS SOLUTION (readable) ===")
+
+    agents = list(solution.keys())
+
+    # collect all ticks
+    max_t = max(
+        max(rm.states.keys()) for rm in solution.values()
+    )
+
+    # build time table
+    for t in range(max_t + 1):
+        line = f"t={t}: "
+        for aid in agents:
+            rm = solution[aid]
+
+            if t in rm.states:
+                _, zone = rm.states[t]
+            else:
+                _, zone = rm.states[max(rm.states.keys())]
+
+            line += f"A{aid}={zone.name}\t"
+        print(line)
+
+    print("\n=== END ===\n")
+
 @dataclass
 class VertexConflict(Conflict):
     agent_1: Agent
@@ -122,7 +148,8 @@ class CTNode:
             # print("in ct node, update sol - states: ", roadmap.states)
             print(f"[CTNode {id(self)}] constraints keys:", self.constraints)
             self.solution[agent.agent_id] = roadmap
-        print(f"[CTNode {id(self)}]: finished solution {self.solution}")
+        print(f"[CTNode {id(self)}]: finished solution")
+        print_solution(self.solution)
         return True
 
     def calc_sol_cost(self) -> float:
