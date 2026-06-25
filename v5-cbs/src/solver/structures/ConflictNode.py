@@ -117,8 +117,10 @@ class CTNode:
             roadmap: RoadMap = agent.plan(pathfinder, self.constraints)
             if roadmap is None:
                 return False
-            else:
-                self.solution[agent.agent_id] = roadmap
+            print("in ct node, update sol - agents: ", agent.agent_id)
+            print("in ct node, update sol - constraints: ", self.constraints)
+            print("in ct node, update sol - states: ", roadmap.states)
+            self.solution[agent.agent_id] = roadmap
         return True
 
     def calc_sol_cost(self) -> float:
