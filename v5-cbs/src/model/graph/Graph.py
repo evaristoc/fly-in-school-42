@@ -167,7 +167,7 @@ class HubFactory:
                     prefix: Optional[str] = None
                 ) -> Zone:
         default_config: ValidZoneMetadata
-        print(prefix)
+        print("in graph class instance - prefix:", prefix)
         if prefix == "start_hub:":
             zone_subcls = cls.mapping["source"]
             default_config = zone_subcls.defaults()

@@ -177,7 +177,7 @@ class Pathfinder:
             # unfeasible / forbidden == banned states at time `tick`
             if state in unfeasible:
                 continue
-            if self._is_forbidden(next_tick, connection, constraints):
+            if self._is_forbidden(next_tick, agent_id, connection, constraints):
                 # print(agent_id, state)
                 # print("unfeasible", agent_id, unfeasible)
                 unfeasible.add(state)
@@ -212,27 +212,25 @@ class Pathfinder:
     def _is_forbidden(
         self,
         tick: int,
+        agent_id: int,
         conn: Connection,
         constraints: ConstrMap,
     ) -> bool:
         candzone: str = conn.zone.name
         candedge: None | tuple = None
         # does the zone has spare capacity?
+        if len(constraints) == 0:
+            return False
         cons_zones: ConstraintZone = constraints.get(tick, {}).get("zones", {})
         zone = cons_zones.get(candzone)
-        if zone and zone["capacity"] == zone["counter"]:
-            print(candzone, zone)
+        if zone and agent_id in zone:
             return True
-        #print(zone, zone["capacity"], zone["counter"])
-        # zone has spare capacity, and the edge?
         if conn.edge is not None:
             candedge = conn.edge.nodenames
             cons_edges: ConstraintEdge = constraints.get(tick, {}).get("edges", {})
             edge = cons_edges.get(candedge)
-            if edge and edge["capacity"] == edge["counter"]:
-                print(candedge, edge)
+            if edge and agent_id in edge:
                 return True
-        # both has capacity: is not forbidden
         return False
 
     def _can_transition(self, current: Step, connection: Connection) -> bool:

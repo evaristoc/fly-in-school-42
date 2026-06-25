@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import Dict, Set, Optional
-from ..graph.Graph import Zone, Edge, Graph
+from ..graph.Graph import Graph
 from ...solver.structures.roadmap_entitites import RoadMap
 from ...solver.pathfinder.pathfinder import Pathfinder
+from ...solver.structures.constraints import ConstrMap
 
 
 @dataclass
@@ -13,7 +14,7 @@ class Agent:
 
     def plan(self,
              pathfinder: Pathfinder,
-             constraints: Dict[int, Dict[int, Dict[str, Set[Zone | Edge]]]])\
+             constraints: ConstrMap)\
             -> Optional[RoadMap]:
         """
         Delegates pathfinding to a pathfinder.
