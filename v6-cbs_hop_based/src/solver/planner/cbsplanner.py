@@ -87,60 +87,125 @@ class CBSPlanner:
             self.tree = CTNode(self.agents)
 
     def find_conflict(self, node: CTNode) -> Optional[Conflict]:
+    # def find_conflict(self, agents: List[Agent]) -> Optional[Conflict]:
+        # 1. Determine the time horizon (longest path)
+        # if not agents:
+        #     return None
         if not node or not node.solution:
-            raise Exception("ERROR: no solution found")
-
+            raise Exception("ERROR: no solution found")            
         max_t = max(
             max(rm.states.keys()) 
             for rm in node.solution.values()
         )
 
+        # 2. Iterate through time (Start at 1 to skip T=0 shared start)
         for t in range(1, max_t + 1):
             occupancy = defaultdict(list)  # zone -> agents
-            edge_moves = defaultdict(list)  # (from, to) -> agents
-
+            
             for agent in self.agents:
-                states = node.solution[agent.agent_id].states
-
-                # if agent has no state at this time, assume it stays in place
-                if t not in states:
-                    if t - 1 in states:
-                        _, zone = states[t - 1]
-                    else:
-                        continue
+                # Get current state or stay at goal if tick exceeds roadmap
+                curr_states = node.solution[agent.agent_id].states
+                #curr_states = agent.roadmap.states
+                if t in curr_states:
+                    prev_zone, curr_zone = curr_states[t]
                 else:
-                    _, zone = states[t]
+                    # Agent is finished; it stays in its last known zone
+                    last_tick = max(curr_states.keys())
+                    _, curr_zone = curr_states[last_tick]
+                    prev_zone = curr_zone 
 
-                _, prev_zone = states[t - 1] if t - 1 in states else (None, zone)
-
-                occupancy[zone].append(agent.agent_id)
-
-                if prev_zone != zone:
-                    edge_moves[(prev_zone, zone)].append(agent.agent_id)
-
-            # --------------------
-            # Vertex conflicts only
-            # --------------------
-            for zone, agents in occupancy.items():
-                if len(agents) > 1:
+                # --- Check Vertex Conflict ---
+                if curr_zone in occupancy:
+                    other_agent_id = occupancy[curr_zone]
                     return VertexConflict(
-                        agent_1=agents[0],
-                        agent_2=agents[1],
-                        zone=zone,
+                        agent_1=other_agent_id,
+                        agent_2=agent.agent_id,
+                        zone=curr_zone,
                         tick=t
                     )
+                occupancy[curr_zone] = agent.agent_id
 
-            # --------------------
-            # Swap conflicts only
-            # --------------------
-            for (a, b), agents in edge_moves.items():
-                if (b, a) in edge_moves:
-                    return EdgeConflict(
-                        agent_1=agents[0],
-                        agent_2=edge_moves[(b, a)][0],
-                        zone_from=a,
-                        zone_to=b,
-                        tick=t
-                    )
+                # # --- Check Edge Swap Conflict ---
+                # # We compare this agent against every other agent at the same tick
+                # for other in self.agents:
+                #     if other.agent_id == agent.agent_id:
+                #         continue
+                    
+                #     other_states = other.roadmap.states
+                #     if t in other_states:
+                #         o_prev, o_curr = other_states[t]
+                        
+                #         # Swap Logic: A moves U->V while B moves V->U
+                #         if curr_zone == o_prev and prev_zone == o_curr:
+                #             # Ensure we don't trigger on 'Wait' vs 'Wait' 
+                #             # (which is a Vertex conflict handled above)
+                #             if curr_zone != prev_zone:
+                #                 return EdgeConflict(
+                #                     agent_1=agent.agent_id,
+                #                     agent_2=other.agent_id,
+                #                     zone_from=prev_zone,
+                #                     zone_to=curr_zone,
+                #                     tick=t
+                #                 )
 
         return None
+    
+    
+    # def find_conflict(self, node: CTNode) -> Optional[Conflict]:
+        # if not node or not node.solution:
+        #     raise Exception("ERROR: no solution found")
+
+        # max_t = max(
+        #     max(rm.states.keys()) 
+        #     for rm in node.solution.values()
+        # )
+
+        # for t in range(1, max_t + 1):
+        #     occupancy = defaultdict(list)  # zone -> agents
+        #     edge_moves = defaultdict(list)  # (from, to) -> agents
+
+        #     for agent in self.agents:
+        #         states = node.solution[agent.agent_id].states
+
+        #         # if agent has no state at this time, assume it stays in place
+        #         if t not in states:
+        #             if t - 1 in states:
+        #                 _, zone = states[t - 1]
+        #             else:
+        #                 continue
+        #         else:
+        #             _, zone = states[t]
+
+        #         _, prev_zone = states[t - 1] if t - 1 in states else (None, zone)
+
+        #         occupancy[zone].append(agent.agent_id)
+
+        #         if prev_zone != zone:
+        #             edge_moves[(prev_zone, zone)].append(agent.agent_id)
+
+        #     # --------------------
+        #     # Vertex conflicts only
+        #     # --------------------
+        #     for zone, agents in occupancy.items():
+        #         if len(agents) > 1:
+        #             return VertexConflict(
+        #                 agent_1=agents[0],
+        #                 agent_2=agents[1],
+        #                 zone=zone,
+        #                 tick=t
+        #             )
+
+        #     # --------------------
+        #     # Swap conflicts only
+        #     # --------------------
+        #     for (a, b), agents in edge_moves.items():
+        #         if (b, a) in edge_moves:
+        #             return EdgeConflict(
+        #                 agent_1=agents[0],
+        #                 agent_2=edge_moves[(b, a)][0],
+        #                 zone_from=a,
+        #                 zone_to=b,
+        #                 tick=t
+        #             )
+
+        # return None
