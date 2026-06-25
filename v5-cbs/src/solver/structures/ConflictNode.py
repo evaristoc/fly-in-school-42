@@ -75,13 +75,13 @@ class CTNode:
             self.agent_id = conflict.agent_1
         if self.parent.right and self.parent.right is self:
             self.agent_id = conflict.agent_2
-        print("ctnode self:", id(self))
-        print("ctnode parent:", id(self.parent))
-        # print("ctnode same?", self.parent.left is self)
-        # print("in ct node class - printing parent:", self.parent.left)
-        print("in ct node class - printing conflict:", conflict)
-        print("in ct node class - printing conflict agent:", conflict.agent_1)
-        print("in ct node class - printing self agent:", self.agent_id)
+        # print("ctnode self:", id(self))
+        # print("ctnode parent:", id(self.parent))
+        # # print("ctnode same?", self.parent.left is self)
+        # # print("in ct node class - printing parent:", self.parent.left)
+        # print("in ct node class - printing conflict:", conflict)
+        # print("in ct node class - printing conflict agent:", conflict.agent_1)
+        # print("in ct node class - printing self agent:", self.agent_id)
         # sys.exit(1) 
         # if self.agent_id == -1:
         #     raise Exception("ERROR at Conflict Node: No agent was created. Stopping.")
@@ -117,10 +117,12 @@ class CTNode:
             roadmap: RoadMap = agent.plan(pathfinder, self.constraints)
             if roadmap is None:
                 return False
-            print("in ct node, update sol - agents: ", agent.agent_id)
-            print("in ct node, update sol - constraints: ", self.constraints)
-            print("in ct node, update sol - states: ", roadmap.states)
+            # print("in ct node, update sol - agents: ", agent.agent_id)
+            # print("in ct node, update sol - constraints: ", self.constraints)
+            # print("in ct node, update sol - states: ", roadmap.states)
+            print(f"[CTNode {id(self)}] constraints keys:", self.constraints)
             self.solution[agent.agent_id] = roadmap
+        print(f"[CTNode {id(self)}]: finished solution {self.solution}")
         return True
 
     def calc_sol_cost(self) -> float:

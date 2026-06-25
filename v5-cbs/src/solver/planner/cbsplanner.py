@@ -41,11 +41,12 @@ class CBSPlanner:
             while Q:
                 _, _, node = heapq.heappop(Q)
                 conflict = self.find_conflict(node)
+                # print(f"[CBS] node={id(node)} conflict={conflict.zone.name} t={conflict.tick}")
                 if conflict:
                     left_node = CTNode(self.agents, node)
                     node.left = left_node
-                    print("cbsplanner:", id(node))
-                    print("cbsplanner left:", id(node.left))
+                    # print("cbsplanner:", id(node))
+                    # print("cbsplanner left:", id(node.left))
                     node.left.add_constraint(conflict)
                     if node.left.update_solution(self.pathfinder, self.agents):
                         node.left.calc_sol_cost()
@@ -88,14 +89,11 @@ class CBSPlanner:
                 # Get current state or stay at goal if tick exceeds roadmap
                 curr_states = node.solution[agent.agent_id].states
                 if t in curr_states:
-                    prev_zone, curr_zone = curr_states[t]
-                else:
-                    # Agent is finished; it stays in its last known zone
-                    # find agent's last move tick (when reached goal)
-                    # for now, prev_zone is then the same as GOAL
-                    last_tick = max(curr_states.keys())
-                    _, curr_zone = curr_states[last_tick]
-                    prev_zone = curr_zone
+                    # NOTE: a sync of the timing between the conflict search and the pathfinder ticking to find next position
+                    _, curr_zone = curr_states[t]
+                    prev_zone = curr_states[t - 1][1] if t - 1 in curr_states else curr_zone
+                if t not in curr_states:
+                    continue
                 # it was empty, agent can take it
                 zoccupancy[curr_zone].append(agent.agent_id)
                 if prev_zone != curr_zone:
