@@ -43,6 +43,7 @@ class PriorityPlanner:
                 # The agent plans a path around all higher-priority paths
                 roadmap = agent.plan(pathfinder, self.master_constraints)
                 if roadmap is None:
+                    print("in prioplanner - agent:", agent.agent_id, None, {})
                     success = False
                     # retry with different priority order
                     break

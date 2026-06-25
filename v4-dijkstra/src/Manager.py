@@ -12,7 +12,7 @@ from .config_parser import Parser
 from src.model.graph.Graph import GraphData, Graph
 from src.model.agent.Agent import Agent
 from src.solver.pathfinder.pathfinder import Pathfinder
-from src.solver.planner.cbsplanner import CBSPlanner
+from src.solver.planner.priorityplanner import PriorityPlanner
 
 
 class Manager:
@@ -94,22 +94,22 @@ class Manager:
         agents = []
         if self.graph:
             for id in range(self.graph.nb_drones):
+                # Each agent gets a Pathfinder (optionally configure
+                # heuristics here)
+                pathfinder = Pathfinder(
+                    heuristic=None,          # or a specific Heuristic subclass
+                    heuristic_weight=1.0,    # lambda factor
+                    time_horizon_factor=3    # default time horizon multiplier
+                )
                 agent = Agent(
                     agent_id=id,
                     entry_time=0,  # default start tick
                     graph=self.graph  # assign the pathfinder
                 )
                 agents.append(agent)
-            # Each agent gets a Pathfinder (optionally configure
-            # heuristics here)
-            pathfinder = Pathfinder(
-                heuristic=None,          # or a specific Heuristic subclass
-                heuristic_weight=1.0,    # lambda factor
-                time_horizon_factor=3    # default time horizon multiplier
-            )
-        cbsplanner = CBSPlanner(agents, pathfinder)
+        prioplanner = PriorityPlanner(agents)
         # Solve the MAPF problem using prioritized planning
-        self.roadmaps = cbsplanner.solve()
+        self.roadmaps = prioplanner.solve(pathfinder, iterations=10)
 
         if not self.roadmaps:
             print("No feasible solution found!")
@@ -157,7 +157,7 @@ class Manager:
                         sys.stdout.flush()
                         time.sleep(0.1)
                 else:
-                    print(state)
+                    print("in manager - state: ", state)
 
             print("\nDone with mandatory part. Rendering...\n")
 
