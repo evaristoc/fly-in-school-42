@@ -12,7 +12,7 @@ from .config_parser import Parser
 from src.model.graph.Graph import GraphData, Graph
 from src.model.agent.Agent import Agent
 from src.solver.pathfinder.pathfinder import Pathfinder
-from src.solver.planner.priorityplanner import PriorityPlanner
+from src.solver.planner.cbsplanner import CBSPlanner
 
 
 class Manager:
@@ -94,37 +94,26 @@ class Manager:
         agents = []
         if self.graph:
             for id in range(self.graph.nb_drones):
-                # Each agent gets a Pathfinder (optionally configure
-                # heuristics here)
-                pathfinder = Pathfinder(
-                    heuristic=None,          # or a specific Heuristic subclass
-                    heuristic_weight=1.0,    # lambda factor
-                    time_horizon_factor=3    # default time horizon multiplier
-                )
                 agent = Agent(
                     agent_id=id,
                     entry_time=0,  # default start tick
                     graph=self.graph  # assign the pathfinder
                 )
                 agents.append(agent)
-        prioplanner = PriorityPlanner(agents)
-        # Solve the MAPF problem using prioritized planning
-        self.roadmaps = prioplanner.solve(pathfinder, iterations=10)
+            # Each agent gets a Pathfinder (optionally configure
+            # heuristics here)
+            pathfinder = Pathfinder(
+                heuristic=None,          # or a specific Heuristic subclass
+                heuristic_weight=1.0,    # lambda factor
+                time_horizon_factor=3    # default time horizon multiplier
+            )
+        cbsplanner = CBSPlanner(agents, pathfinder)
+        # Solve the MAPF problem using cbs
+        self.roadmaps = cbsplanner.solve()
 
         if not self.roadmaps:
             print("No feasible solution found!")
-
-            # Option 1: increase Pathfinder's time horizon factor
-            pathfinder.time_horizon_factor += 1
-
-            # Option 2: try again with more iterations / shuffled agent order
-            iterations = 10
-            self.roadmaps = prioplanner.solve(pathfinder=pathfinder,
-                                              iterations=2)
-
-            if not self.roadmaps:
-                print(f"Still no solution found after {iterations} retries.")
-                exit(1)
+            sys.exit(1)
         else:
             # Pretty-print the results
             print("We got a solution. Printing on terminal...\n\n")
@@ -157,7 +146,7 @@ class Manager:
                         sys.stdout.flush()
                         time.sleep(0.1)
                 else:
-                    print("in manager - state: ", state)
+                    print("in the manager - state: ", state)
 
             print("\nDone with mandatory part. Rendering...\n")
 
@@ -223,7 +212,7 @@ class Manager:
                     #     rest = minlen + self.graph.nb_drones - len(a["path"])
                     #     a["path"] = a["path"] + [a["path"][-1]] * rest
                     jsondata["agents"].append(a)
-        print(jsondata)
+        print("in the manager - jsondata: ", jsondata)
 
         with open(Path(os.curdir, 'maps', filestem + ".json"), 'w') as file:
             json.dump(jsondata, file)

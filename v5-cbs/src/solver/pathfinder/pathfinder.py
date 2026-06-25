@@ -177,10 +177,11 @@ class Pathfinder:
             # unfeasible / forbidden == banned states at time `tick`
             if state in unfeasible:
                 continue
-            if self._is_forbidden(next_tick, connection, constraints):
-                # print(agent_id, state)
-                # print("unfeasible", agent_id, unfeasible)
+            if self._is_forbidden(next_tick, agent_id, connection, constraints):
+                # print("in the pathfinder aid, state: ", agent_id, state)
+                # print("in the pathfinder: unfeasibles (comes before checking forbid) :", agent_id, unfeasible)
                 unfeasible.add(state)
+                # print("in the pathfinder: unfeasibles after update (comes before checking forbid) :", agent_id, unfeasible)
                 continue
             # can_transition == temporary or permanent (not) evaluable state
             # include cases to which prioplanner doesn't have access
@@ -212,27 +213,28 @@ class Pathfinder:
     def _is_forbidden(
         self,
         tick: int,
+        agent_id: int,
         conn: Connection,
         constraints: ConstrMap,
     ) -> bool:
         candzone: str = conn.zone.name
         candedge: None | tuple = None
+        # print(f"[FORBID CHECK] agent={agent_id} tick={tick} zone={candzone} edge={candedge} constraint_keys={list(constraints.keys())}")
         # does the zone has spare capacity?
+        if not constraints or tick not in constraints:
+            return False
         cons_zones: ConstraintZone = constraints.get(tick, {}).get("zones", {})
         zone = cons_zones.get(candzone)
-        if zone and zone["capacity"] == zone["counter"]:
-            print("in pathfinder - candidate zone: ", candzone, zone)
+        if zone and agent_id in zone["agents"]:
+            # print(f"[BLOCK ZONE] agent={agent_id} tick={tick} zone={candzone}")
             return True
-        #print(zone, zone["capacity"], zone["counter"])
-        # zone has spare capacity, and the edge?
         if conn.edge is not None:
             candedge = conn.edge.nodenames
             cons_edges: ConstraintEdge = constraints.get(tick, {}).get("edges", {})
             edge = cons_edges.get(candedge)
-            if edge and edge["capacity"] == edge["counter"]:
-                print("in pathfinder - candidate edge: ", candedge, edge)
+            if edge and agent_id in edge["agents"]:
+                # print(f"[BLOCK EDGE] agent={agent_id} tick={tick} edge={candedge}")
                 return True
-        # both has capacity: is not forbidden
         return False
 
     def _can_transition(self, current: Step, connection: Connection) -> bool:
