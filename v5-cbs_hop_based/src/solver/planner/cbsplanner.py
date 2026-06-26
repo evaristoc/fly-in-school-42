@@ -6,6 +6,7 @@ from ..pathfinder.pathfinder import Pathfinder
 from ..structures.ConflictNode import CTNode, Tree, Conflict, VertexConflict, EdgeConflict, State
 from ..structures.roadmap_entitites import RoadMap
 from ...model.agent.Agent import Agent
+from ...model.graph.Graph import StartZone, EndZone
 # from model.graph import Connection
 
 # TODO ignoring ctnodes in conflict detection? Solution (roadmap) should be then correct after including for constraints
@@ -72,10 +73,14 @@ class CBSPlanner:
                     )
                     if node.right.update_solution(self.pathfinder, self.agents):
                         node.right.calc_sol_cost()
-                        counter += 1
-                        heapq.heappush(Q, (node.right.cost, counter, node.right))
+                        # TODO this is a patch to keep working later on this
+                        # NOTE: using only cost to reduce redundant branches is NOT correct
+                        #       but it works for this project for now
+                        if node.right.cost <  node.left.cost:
+                            counter += 1
+                            heapq.heappush(Q, (node.right.cost, counter, node.right))
                     else:
-                        raise Exception("Error at Planner: no a right solution.")
+                        raise Exception("Error at Planner: it was not able to branch.")
                 else:
                     return node.solution
 
@@ -100,7 +105,8 @@ class CBSPlanner:
 
         # 2. Iterate through time (Start at 1 to skip T=0 shared start)
         for t in range(1, max_t + 1):
-            occupancy = defaultdict(list)  # zone -> agents
+            occupancy = defaultdict(int)  # zone -> agents
+            occupancytest = defaultdict(int)
             
             for agent in self.agents:
                 # Get current state or stay at goal if tick exceeds roadmap
@@ -115,15 +121,27 @@ class CBSPlanner:
                     prev_zone = curr_zone 
 
                 # --- Check Vertex Conflict ---
+                if not (isinstance(curr_zone, StartZone) or isinstance(curr_zone, EndZone)) and curr_zone.name in occupancytest:
+                    other_agent_id = occupancytest[curr_zone.name]
+                    print("occupancytest", occupancytest, t, curr_zone.name, other_agent_id, agent.agent_id)
+                    return VertexConflict(
+                            agent_1=other_agent_id,
+                            agent_2=agent.agent_id,
+                            zone=curr_zone,
+                            tick=t
+                        )
                 if curr_zone in occupancy:
                     other_agent_id = occupancy[curr_zone]
+                    print("occupancy", occupancy, t, curr_zone.name, other_agent_id, agent.agent_id)
                     return VertexConflict(
                         agent_1=other_agent_id,
                         agent_2=agent.agent_id,
                         zone=curr_zone,
                         tick=t
                     )
+                print("current zone", id(curr_zone), curr_zone.name, agent.agent_id)
                 occupancy[curr_zone] = agent.agent_id
+                occupancytest[curr_zone.name] = agent.agent_id
 
                 # # --- Check Edge Swap Conflict ---
                 # # We compare this agent against every other agent at the same tick
