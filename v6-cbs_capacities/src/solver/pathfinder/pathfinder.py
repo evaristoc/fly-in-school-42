@@ -231,7 +231,7 @@ class Pathfinder:
         if conn.edge is not None:
             candedge = conn.edge.nodenames
             cons_edges: ConstraintEdge = constraints.get(tick, {}).get("edges", {})
-            edge = cons_edges.get(candedge)
+            edge = cons_edges.get(frozenset({candedge[0], candedge[1]}))
             if edge and agent_id in edge["agents"]:
                 # print(f"[BLOCK EDGE] agent={agent_id} tick={tick} edge={candedge}")
                 return True

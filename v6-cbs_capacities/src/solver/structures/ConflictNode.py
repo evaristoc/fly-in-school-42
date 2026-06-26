@@ -123,11 +123,13 @@ class CTNode:
         if isinstance(conflict, EdgeConflict):
             edge: Edge | None = None
             for n in conflict.zone_from.neighbours:
-                if n.zone == conflict.zone_to:
+                if n.zone.name == conflict.zone_to.name:
                     edge = n.edge
             econstrs: ConstraintEdge = self.constraints[conflict.tick]["edges"]
-            ename: tuple = edge.nodenames
-            if ename not in econstrs:
+            # ename: tuple = edge.nodenames
+            ename: set | None = frozenset({conflict.zone_from.name, conflict.zone_to.name})
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ename, edge)
+            if ename and ename not in econstrs:
                 econstrs[ename] = {
                                 "capacity": edge.max_link_capacity,
                                 "agents": set()}

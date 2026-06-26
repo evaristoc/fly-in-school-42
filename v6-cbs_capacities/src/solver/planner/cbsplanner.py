@@ -6,6 +6,7 @@ from ..pathfinder.pathfinder import Pathfinder
 from ..structures.ConflictNode import CTNode, Tree, Conflict, VertexConflict, EdgeConflict, State
 from ..structures.roadmap_entitites import RoadMap
 from ...model.agent.Agent import Agent
+from ...model.graph.Graph import StartZone, EndZone
 # from model.graph import Connection
 
 # TODO ignoring ctnodes in conflict detection? Solution (roadmap) should be then correct after including for constraints
@@ -71,9 +72,12 @@ class CBSPlanner:
                         time_horizon_factor=3    # default time horizon multiplier
                     )
                     if node.right.update_solution(self.pathfinder, self.agents):
-                        node.right.calc_sol_cost()
-                        counter += 1
-                        heapq.heappush(Q, (node.right.cost, counter, node.right))
+                        # TODO this is a patch to keep working later on this
+                        # NOTE: using only cost to reduce redundant branches is NOT correct
+                        #       but it works for this project for now
+                        if node.right.cost <  node.left.cost:
+                            counter += 1
+                            heapq.heappush(Q, (node.right.cost, counter, node.right))
                     else:
                         raise Exception("Error at Planner: no a right solution.")
                 else:
@@ -86,77 +90,98 @@ class CBSPlanner:
         if not self.tree:
             self.tree = CTNode(self.agents)
 
-    def find_conflict(self, node: CTNode) -> Optional[Conflict] | None:
-        # TODO finding the edge capacity conflict should be also included, probably related to the conflicting Node
-        # Determine the time horizon (longest path)
-        #if not node or (node.parent is not None and not node.agent_id) or not node.solution:
+    def find_conflict(self, node: CTNode) -> Optional[Conflict]:
+
         if not node or not node.solution:
-            raise Exception('ERROR when finding conflict - no agents or roadmaps found')
-        # for agent find the max tick and then the max of all (in this case, the last arrival time)
+            raise Exception("ERROR when finding conflict - no agents or roadmaps found")
+
+        # Longest roadmap
         max_t = max(max(rm.states.keys()) for rm in node.solution.values())
-        # Iterate through time (Start at 1 to skip T=0 shared start)
-        # print("cbsplanner - printing solution: ", node.solution)
+
         for t in range(1, max_t + 1):
-            zoccupancy = defaultdict(list)  # {zone_id: [agent]}
-            eoccupancy = defaultdict(list)  # now {edge_id: [agent]}
+
+            # (from_name, to_name) -> [agent_ids]
+            eoccupancy = defaultdict(list)
+
+            # zone_name -> [agent_ids]
+            zoccupancy = defaultdict(list)
+
+            # zone_name -> canonical Zone instance
+            zone_lookup = {}
+
+            # -----------------------------
+            # Build occupancy tables
+            # -----------------------------
             for agent in self.agents:
-                # Get current state or stay at goal if tick exceeds roadmap
-                curr_states = node.solution[agent.agent_id].states
-                if t in curr_states:
-                    # NOTE: a sync of the timing between the conflict search and the pathfinder ticking to find next position
-                    _, curr_zone = curr_states[t]
-                    prev_zone = curr_states[t - 1][1] if t - 1 in curr_states else curr_zone
-                if t not in curr_states:
+
+                states = node.solution[agent.agent_id].states
+
+                if t not in states:
                     continue
-                # it was empty, agent can take it
-                zoccupancy[curr_zone].append(agent.agent_id)
-                if prev_zone != curr_zone:
-                    eoccupancy[(prev_zone, curr_zone)].append(agent.agent_id)
-            for curr_zone, agents in zoccupancy.items():
-                if len(agents) > 1 and len(agents) > curr_zone.max_drones:
+
+                _, curr_zone = states[t]
+
+                if (t - 1) in states:
+                    prev_zone = states[t - 1][1]
+                else:
+                    prev_zone = curr_zone
+
+                # Always remember canonical references
+                zone_lookup[prev_zone.name] = prev_zone
+                zone_lookup[curr_zone.name] = curr_zone
+
+                # Edge occupancy (includes start->X and X->goal)
+                if prev_zone.name != curr_zone.name:
+                    eoccupancy[(prev_zone.name, curr_zone.name)].append(agent.agent_id)
+
+                # Vertex occupancy (ignore start/goal)
+                if not (isinstance(curr_zone, StartZone) or isinstance(curr_zone, EndZone)):
+                    zoccupancy[curr_zone.name].append(agent.agent_id)
+
+            # -----------------------------
+            # EDGE CONFLICTS (checked first)
+            # -----------------------------
+            for (from_name, to_name), agents in eoccupancy.items():
+
+                from_zone = zone_lookup[from_name]
+                to_zone = zone_lookup[to_name]
+
+                edge = next(
+                    (
+                        n.edge
+                        for n in to_zone.neighbours
+                        if set(n.edge.nodenames) == {from_name, to_name}
+                    ),
+                    None,
+                )
+
+                if edge is None:
+                    raise Exception(
+                        f"Cannot find edge between {from_name} and {to_name}"
+                    )
+
+                if len(agents) > edge.max_link_capacity:
+                    return EdgeConflict(
+                        agent_1=agents[0],
+                        agent_2=agents[1],
+                        zone_from=from_zone,
+                        zone_to=to_zone,
+                        tick=t,
+                    )
+
+            # -----------------------------
+            # VERTEX CONFLICTS
+            # -----------------------------
+            for zone_name, agents in zoccupancy.items():
+
+                zone = zone_lookup[zone_name]
+
+                if len(agents) > zone.max_drones:
                     return VertexConflict(
                         agent_1=agents[0],
                         agent_2=agents[1],
-                        zone=curr_zone,
-                        tick=t
+                        zone=zone,
+                        tick=t,
                     )
-            # Check Edge Conflicts
-            # Swap Conflict is not required for the Fly-In School 42 project,
-            # but it is common in CBS.
-            # it was empty, agent can take it
-            # first capacity:
-            for (prev_zone, curr_zone), agents in eoccupancy.items():
-                actual_edge = next((n.edge for n in curr_zone.neighbours if prev_zone.name in n.edge.nodenames), None)
-                if len(agents) > 1 and len(agents) > actual_edge.max_link_capacity:
-                    return EdgeConflict(
-                        agent_1=agents[0],
-                        agent_2=agents[1],
-                        zone_from=prev_zone,
-                        zone_to=curr_zone,
-                        tick=t
-                    )
-            # now swaping:
-                reverse = (curr_zone, prev_zone)
-                if reverse in eoccupancy:
-                    other_agents = eoccupancy[reverse]
-                    return EdgeConflict(
-                        agent_1=agents[0],
-                        agent_2=other_agents[0],
-                        zone_from=prev_zone,
-                        zone_to=curr_zone,
-                        tick=t
-                    )
+
         return None
-
-    # def add_constraint(self):
-    #     pass
-
-    # def bisect_CT(self):
-    #     if self.bisect == 'WAIT':
-    #         self.tree.right = CTNode()
-    #     elif self.bisect == 'MOVE':
-    #         self.tree.left = CTNode()
-
-    # def agent_violates_constraints(self, agent_id: int,
-    #                                step: Connection, thetick: int) -> bool:
-    #     pass
