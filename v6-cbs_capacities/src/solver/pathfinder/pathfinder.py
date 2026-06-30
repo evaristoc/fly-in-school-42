@@ -168,7 +168,7 @@ class Pathfinder:
 
             next_zone = connection.zone
             next_tick = current.tick + 1
-            # print("check tick", agent_id, next_tick)
+            # print("check tick 1111", agent_id, next_tick)
 
             state = (next_zone.name, next_tick)
             new_cost = self._compute_f_cost(next_zone, current.f_cost)
@@ -188,6 +188,7 @@ class Pathfinder:
             if not self._can_transition(current, connection):
                 continue
             # print("selected", agent_id, current, state)
+            # print("check tick 2222", agent_id, next_tick, current.zone.name, connection.zone.name)
             step: Step | None = None
             # print("selected candidate", agent_id, next_tick, connection.zone.name)
             if graph is not None and graph.goal is not None:
