@@ -40,7 +40,7 @@ class Pathfinder:
         """
 
         open_set: List[Step] = []
-        visited: Set[Tuple[str, int]] = set()
+        visited: Set[Tuple[str, str]] = set()
         unfeasible: Set[Tuple[str, int]] = set()
         counter = count()
         best_cost: dict[tuple[str, int], float] = {}
@@ -168,7 +168,7 @@ class Pathfinder:
 
             next_zone = connection.zone
             next_tick = current.tick + 1
-            # print("check tick", agent_id, next_tick)
+            # print("check tick 1111", agent_id, next_tick)
 
             state = (next_zone.name, next_tick)
             new_cost = self._compute_f_cost(next_zone, current.f_cost)
@@ -187,7 +187,10 @@ class Pathfinder:
             # include cases to which prioplanner doesn't have access
             if not self._can_transition(current, connection):
                 continue
+            if connection.edge and connection.edge.nodenames in visited:
+                continue
             # print("selected", agent_id, current, state)
+            # print("check tick 2222", agent_id, next_tick, current.zone.name, connection.zone.name)
             step: Step | None = None
             # print("selected candidate", agent_id, next_tick, connection.zone.name)
             if graph is not None and graph.goal is not None:
@@ -204,6 +207,8 @@ class Pathfinder:
                 raise Exception("Could not make a step")
             assert step.f_cost == new_cost
             best_cost[state] = new_cost
+            if connection.edge:
+                visited.add(connection.edge.nodenames)
             heapq.heappush(open_set, step)
 
     # -------------------------
