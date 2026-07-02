@@ -107,29 +107,6 @@ class Pathfinder:
         else:
             return None
 
-    def _can_transition(self, current: Step, connection: Connection) -> bool:
-        zone = connection.zone
-
-        # cannot re-enter start
-        if isinstance(zone, StartZone) and current.g_cost > 0:
-            return False
-
-        # waiting rules
-        if zone == current.zone:
-            if current.wait >= zone.max_wait:
-                return False
-
-        # is blocked
-        if isinstance(zone, BlockedZone):
-            return False
-
-        # allow the first tick in start even if visited
-        if isinstance(zone, StartZone) and current.tick == current.parent.tick\
-                if current.parent else -1:
-            return True
-
-        return True
-
     # -------------------------
     # Step construction
     # -------------------------
