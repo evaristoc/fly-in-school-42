@@ -3,7 +3,7 @@ from typing import List, Optional, Dict
 from src import ValidZone, ValidZoneMetadata, ValidEdge, ValidEdgeMetadata
 from .Zone import Zone, StartZone, EndZone, HubFactory
 from .Edge import Edge
-from ...solver.heuristics.heuristics import GraphHeuristic
+from ...solver.heuristics.graphmethods import GraphHeuristic
 
 
 @dataclass

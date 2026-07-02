@@ -1,20 +1,19 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from math import sqrt
 from ...model.graph.Zone import Zone, RestrictedZone
 from ...model.graph.Connection import Connection
 
 
-class GraphHeuristic(ABC):
-    @abstractmethod   
+class GraphHeuristic:
+    @abstractmethod
     def hub_connections(self):
         ...
     
-    @abstractmethod
     def compute_reverse_map(self):
         ...
 
 
-class GraphBellmanFord(GraphHeuristic):
+class GraphBellmanFordWait(GraphHeuristic):
     def hub_connections(self):
         for z in self.zones:
             for edge in self.edges:
