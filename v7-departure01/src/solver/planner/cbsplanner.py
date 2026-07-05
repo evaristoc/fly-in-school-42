@@ -1,7 +1,7 @@
 import heapq
 from collections import defaultdict
 from typing import List, Optional, Dict
-from ..pathfinder.pathfinder import Pathfinder
+from ..pathfinder.pathfinder import PathfinderData
 from ..structures.ConflictNode import CTNode, Tree, Conflict, VertexConflict, \
     EdgeConflict, State
 from ..structures.roadmap_entitites import RoadMap
@@ -15,9 +15,10 @@ from ...model.graph.Zone import StartZone, EndZone
 
 
 class CBSPlanner:
-    def __init__(self, agents: List[Agent], pathfinder: Pathfinder):
+    def __init__(self, agents: List[Agent], pathfinderdecl: Pathfinder, pathfinderdata: PathfinderData):
         self.agents: List[Agent] = agents
-        self.pathfinder = pathfinder
+        self.pathfinder = pathfinderdecl
+        self.pathfinderdata = pathfinderdata
         if len(agents) == 0:
             raise Exception("ERROR at init CBSPlanner: no agents?")
         self.constraints = []
@@ -35,7 +36,7 @@ class CBSPlanner:
         if self.tree:
             root = self.tree
             Q = []
-            if root.update_solution(self.pathfinder, self.agents):
+            if root.update_solution(self.pathtfinder, self.pathfinderdata, self.agents):
                 root.calc_sol_cost()
                 heapq.heappush(Q, (root.cost, counter, root))
             else:
@@ -51,12 +52,7 @@ class CBSPlanner:
                     # print("cbsplanner:", id(node))
                     # print("cbsplanner left:", id(node.left))
                     node.left.add_constraint(conflict)
-                    self.pathfinder = Pathfinder(
-                        heuristic=None,          # or a specific Heuristic subclass
-                        heuristic_weight=1.0,    # lambda factor
-                        time_horizon_factor=3    # default time horizon multiplier
-                    )
-                    if node.left.update_solution(self.pathfinder, self.agents):
+                    if node.left.update_solution(self.pathtfinder, self.pathfinderdata, self.agents):
                         node.left.calc_sol_cost()
                         counter += 1
                         heapq.heappush(Q, (node.left.cost, counter, node.left))
@@ -65,16 +61,11 @@ class CBSPlanner:
                     right_node = CTNode(self.agents, node)
                     node.right = right_node
                     node.right.add_constraint(conflict)
-                    self.pathfinder = Pathfinder(
-                        heuristic=None,          # or a specific Heuristic subclass
-                        heuristic_weight=1.0,    # lambda factor
-                        time_horizon_factor=3    # default time horizon multiplier
-                    )
-                    if node.right.update_solution(self.pathfinder, self.agents):
+                    if node.right.update_solution(self.pathtfinder, self.pathfinderdata, self.agents):
                         # TODO this is a patch to keep working later on this
                         # NOTE: using only cost to reduce redundant branches is NOT correct
                         #       but it works for this project for now
-                        if node.right.cost <  node.left.cost:
+                        if node.right.cost < node.left.cost:
                             counter += 1
                             heapq.heappush(Q, (node.right.cost, counter, node.right))
                     else:

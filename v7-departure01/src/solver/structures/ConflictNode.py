@@ -4,7 +4,7 @@ from enum import auto, StrEnum
 from dataclasses import dataclass
 from .roadmap_entitites import RoadMap
 from .constraints import ConstrMap, ConstraintZone, ConstraintEdge
-from ..pathfinder.pathfinder import Pathfinder
+from ..pathfinder.pathfinder import Pathfinder, PathfinderData
 from ...model.agent.Agent import Agent
 from ...model.graph.Zone import Zone
 from ...model.graph.Edge import Edge
@@ -135,13 +135,13 @@ class CTNode:
             econstrs[ename]["agents"].add(self.agent_id)
         print("in conflict node instance: ", conflict.tick, self.constraints[conflict.tick])
 
-    def update_solution(self, pathfinder: Pathfinder, agents: List[Agent] = []) -> bool:
+    def update_solution(self, pathfinder: Pathfinder, pathfinderdata: PathfinderData, agents: List[Agent] = []) -> bool:
         if self.agent_id != -1:
             agents = [agents[self.agent_id]]
         if len(agents) == 0:
             return False
         for agent in agents:
-            roadmap: RoadMap = agent.plan(pathfinder, self.constraints)
+            roadmap: RoadMap = agent.plan(pathfinderdata, self.constraints)
             if roadmap is None:
                 return False
             # print("in ct node, update sol - agents: ", agent.agent_id)

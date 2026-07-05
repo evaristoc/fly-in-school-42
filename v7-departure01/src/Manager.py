@@ -11,12 +11,13 @@ from typing import Optional, Dict, Union, Any
 from .config_parser import Parser
 from src.model.graph.Graph import GraphData, Graph
 from src.model.agent.Agent import Agent
-from src.solver.pathfinder.pathfinder import Pathfinder
+# from src.solver.pathfinder.pathfinder import Pathfinder
+from src.solver.pathfinder.pathfinder import PathfinderData
+from src.solver.pathfinder.dijkstrapathfinder import DijkstraAlgo, DijkstraCostFunc, DijkstraRules, DijkstraPathfinder
 from src.solver.planner.cbsplanner import CBSPlanner
 
 
 class Manager:
-
     def __init__(self) -> None:
         self.filepath: Path
         self.graphdata: Optional[GraphData] = None
@@ -102,12 +103,22 @@ class Manager:
                 agents.append(agent)
             # Each agent gets a Pathfinder (optionally configure
             # heuristics here)
-            pathfinder = Pathfinder(
-                heuristic=None,          # or a specific Heuristic subclass
-                heuristic_weight=1.0,    # lambda factor
-                time_horizon_factor=3    # default time horizon multiplier
-            )
-        cbsplanner = CBSPlanner(agents, pathfinder)
+            # pathfinder = Pathfinder(
+            #     heuristic=None,          # or a specific Heuristic subclass
+            #     heuristic_weight=1.0,    # lambda factor
+            #     time_horizon_factor=3    # default time horizon multiplier
+            # )
+        # TODO : I had to pass this pathfinder as a declaration, not as an instance...
+        dijkstrapathfinderdata = PathfinderData(DijkstraAlgo,
+                                                DijkstraRules,
+                                                DijkstraCostFunc,
+                                                None,
+                                                0.0,
+                                                3)
+        # NOTE: notice that I am not instantiating the pathfinder immediately; it will happen when running for agents
+        cbsplanner = CBSPlanner(agents,
+                                DijkstraPathfinder,
+                                dijkstrapathfinderdata)
         # Solve the MAPF problem using cbs
         self.roadmaps = cbsplanner.solve()
 
