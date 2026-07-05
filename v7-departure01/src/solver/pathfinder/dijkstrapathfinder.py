@@ -2,8 +2,6 @@ from typing import Dict, Tuple, Optional, Iterator
 from .pathfinder import Pathfinder
 from ..structures.roadmap_entitites import Step, RoadMap
 from ..structures.constraints import ConstrMap
-from ..heuristics.costheuristics import Heuristic
-from ..heuristics.dijkstra import DijkstraAlgo, DijkstraRules, DijkstraCostFunc
 from ...model.graph.Zone import Zone
 from ...model.graph.Connection import Connection
 from ...model.graph.Graph import Graph
@@ -62,20 +60,3 @@ class DijkstraPathfinder(Pathfinder):
         )
         return step
 
-    # -------------------------
-    # Output
-    # -------------------------
-
-    def _build_roadmap(self, step: Step, agent_id: int) -> RoadMap:
-        roadmap = RoadMap(agent_id=agent_id, cost=step.f_cost)
-        states: Dict[int, Tuple[Zone, Zone]] = {}
-        while step:
-            prev = step.parent.zone if step.parent else step.zone
-            assert prev is not None and step.zone is not None
-            states[step.tick] = (prev, step.zone)
-            if step.parent is None:
-                break
-            step = step.parent
-
-        roadmap.states = dict(sorted(states.items()))
-        return roadmap

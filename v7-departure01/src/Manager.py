@@ -8,12 +8,14 @@ import inspect
 import json
 from collections import defaultdict
 from typing import Optional, Dict, Union, Any
-from .config_parser import Parser
 from src.model.graph.Graph import GraphData, Graph
+from .config_parser import Parser
 from src.model.agent.Agent import Agent
 # from src.solver.pathfinder.pathfinder import Pathfinder
+from src.solver.heuristics.graphmethods import GraphHeuristic, GraphBellmanFordWait
 from src.solver.pathfinder.pathfinder import PathfinderData
-from src.solver.pathfinder.dijkstrapathfinder import DijkstraAlgo, DijkstraCostFunc, DijkstraRules, DijkstraPathfinder
+from src.solver.heuristics.dijkstra import DijkstraAlgo, DijkstraCostFunc, DijkstraRules
+from src.solver.pathfinder.dijkstrapathfinder import DijkstraPathfinder
 from src.solver.planner.cbsplanner import CBSPlanner
 
 
@@ -63,12 +65,13 @@ class Manager:
         print("=== Check Graph ===")
         print("="*20)
         try:
-            self.graph = Graph(self.graphdata)
+            graphmethods: GraphHeuristic = GraphBellmanFordWait 
+            self.graph = Graph(self.graphdata, graphmethods)
             members = inspect.getmembers(self.graph,
                                         lambda a: not (inspect.isroutine(a)))
             print("inspect", members)
         except Exception as e:
-            print("Error during graph creation. Exiting")
+            print("Error during graph creation. Exiting. ", e)
             exit(1)
         print("\n="*20)
         print("=== Check Agents ===")

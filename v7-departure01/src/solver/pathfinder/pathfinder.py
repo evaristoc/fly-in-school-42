@@ -18,9 +18,9 @@ class PathfinderData:
 class Pathfinder:
     def __init__(self, pfdata: PathfinderData) -> None:
         self.heuristic = pfdata.heuristic or ZeroHeuristic()
-        self.heuristic_weight = pfdata.heuristic_weight | 0.0
-        self.time_horizon_factor = pfdata.time_horizon_factor | 3
-        self.algo = pfdata.algo(pfdata.pathrules, pfdata.costfunc)
+        self.heuristic_weight = pfdata.heuristic_weight if pfdata.heuristic_weight is not None else 0.0
+        self.time_horizon_factor = pfdata.time_horizon_factor if pfdata.time_horizon_factor is not None else 3
+        self.algo = pfdata.algo(pfdata.pathrules(), pfdata.costfunc())
         self.algo.mastersolver = self
 
     # -------------------------

@@ -1,7 +1,11 @@
+# from abc import ABC, abstractmethod
+# from math import sqrt
 from abc import abstractmethod
-from math import sqrt
-from ...model.graph.Zone import Zone, RestrictedZone
+from typing import TYPE_CHECKING
 from ...model.graph.Connection import Connection
+
+if TYPE_CHECKING:
+    from ...model.graph.Zone import Zone, RestrictedZone
 
 
 class GraphHeuristic:
@@ -51,29 +55,29 @@ class GraphBellmanFordWait(GraphHeuristic):
             self.reversecost_map = reversecost_map
 
 
-class Heuristic(ABC):
-    @abstractmethod
-    def __call__(self, current: Zone, goal: Zone) -> float:
-        pass
+# class Heuristic(ABC):
+#     @abstractmethod
+#     def __call__(self, current: Zone, goal: Zone) -> float:
+#         pass
 
 
-class ZeroHeuristic(Heuristic):
-    def __call__(self, current: Zone, goal: Zone) -> float:
-        return 0.0
+# class ZeroHeuristic(Heuristic):
+#     def __call__(self, current: Zone, goal: Zone) -> float:
+#         return 0.0
 
 
-class EuclideanHeuristic(Heuristic):
-    def __call__(self, current: Zone, goal: Zone) -> float:
-        return sqrt((goal.x - current.x) ** 2 + (goal.y - current.y) ** 2)
+# class EuclideanHeuristic(Heuristic):
+#     def __call__(self, current: Zone, goal: Zone) -> float:
+#         return sqrt((goal.x - current.x) ** 2 + (goal.y - current.y) ** 2)
 
 
-class ManhattanHeuristic(Heuristic):
-    def __call__(self, current: Zone, goal: Zone) -> float:
-        return abs(goal.x - current.x) + abs(goal.y - current.y)
+# class ManhattanHeuristic(Heuristic):
+#     def __call__(self, current: Zone, goal: Zone) -> float:
+#         return abs(goal.x - current.x) + abs(goal.y - current.y)
 
 
-class ChebyshevHeuristic(Heuristic):
-    def __call__(self, current: Zone, goal: Zone) -> float:
-        dx = abs(current.x - goal.x)
-        dy = abs(current.y - goal.y)
-        return float(max(dx, dy))
+# class ChebyshevHeuristic(Heuristic):
+#     def __call__(self, current: Zone, goal: Zone) -> float:
+#         dx = abs(current.x - goal.x)
+#         dy = abs(current.y - goal.y)
+#         return float(max(dx, dy))

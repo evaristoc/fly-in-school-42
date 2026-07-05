@@ -8,7 +8,6 @@ from pydantic import ValidationError
 from ..error_handlers import ConfigError, DuplicatesError, InvalidEntryError
 from ..validator import ValidZone, ValidZoneMetadata, ValidEdge, \
     ValidEdgeMetadata
-from ..model.graph.Graph import GraphData
 
 named_nodes: List[str] = []
 coordinates: Dict[int, List[int]] = defaultdict(list)
@@ -17,6 +16,7 @@ edge_sets: List[Set[str]] = []
 
 class Parser:
     def __init__(self) -> None:
+        from ..model.graph.Graph import GraphData
         self._graphdata = GraphData()
 
     def _read_lines(self, path: Path) -> List[str]:

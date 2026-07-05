@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from typing import List, Optional, Type, Literal, cast
-from src import ValidZone, ValidZoneMetadata, ValidEdge, ValidEdgeMetadata
-from .Edge import Edge
+from src import ValidZone, ValidZoneMetadata
 from .Connection import Connection
 
 

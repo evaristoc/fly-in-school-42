@@ -1,7 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-from typing import Optional
-from abc import staticmethod
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from ..pathfinder.pathfinder import Pathfinder
@@ -22,7 +20,7 @@ class CostFunction:
 
 
 class PathAlgorithm:
-    def __init__(self, costfuncinst: CostFunction, policyinst: PathRules) -> None:
+    def __init__(self, policyinst: PathRules, costfuncinst: CostFunction) -> None:
         """
         get instances of constfunct and policy
         accepts different kind of costfuncs and policies (as long as 
@@ -31,7 +29,7 @@ class PathAlgorithm:
         """
         self.costfunc = costfuncinst
         self.policy = policyinst
-        self.mastersolver: Optional[Pathfinder] = None
+        self.mastersolver: Optional["Pathfinder"] = None
 
     def search(self, *args, **kargs) -> None:
         ...

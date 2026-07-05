@@ -1,16 +1,16 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 from src import ValidZone, ValidZoneMetadata, ValidEdge, ValidEdgeMetadata
-from .Zone import Zone, StartZone, EndZone, HubFactory
-from .Edge import Edge
 from ...solver.heuristics.graphmethods import GraphHeuristic
 
+from .Zone import Zone, StartZone, EndZone, HubFactory
+from .Edge import Edge
 
 @dataclass
 class GraphData():
     nb_drones: int = field(default=0)
-    zones: List[Zone] = field(default_factory=list)
-    edges: List[Edge] = field(default_factory=list)
+    zones: List["Zone"] = field(default_factory=list)
+    edges: List["Edge"] = field(default_factory=list)
 
     def add_edge(self,  mandatory: ValidEdge,
                  meta: Optional[ValidEdgeMetadata] = None) -> None:
@@ -43,7 +43,7 @@ class Graph:
         self.exec_methods()
 
     @property
-    def startzone(self) -> Optional[Zone]:
+    def startzone(self) -> Optional["Zone"]:
         if self.zones:
             for z in self.zones:
                 if isinstance(z, StartZone):
@@ -51,17 +51,17 @@ class Graph:
         return None
 
     @property
-    def goal(self) -> Optional[Zone]:
+    def goal(self) -> Optional["Zone"]:
         if self.zones:
             for z in self.zones:
                 if isinstance(z, EndZone):
                     return z
         return None
 
-    def register_zone(self, zone: Zone) -> None:
+    def register_zone(self, zone: "Zone") -> None:
         self.zones.append(zone)
 
-    def register_edge(self, edge: Edge) -> None:
+    def register_edge(self, edge: "Edge") -> None:
         self.edges.append(edge)
 
     def exec_methods(self) -> None:

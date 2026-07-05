@@ -11,7 +11,6 @@ class Agent:
     graph: Graph
     agent_id: int
     entry_time: int = 0
-    pathfinder: Pathfinder
     
     def plan(self,
              pathfinderDecl: Pathfinder,

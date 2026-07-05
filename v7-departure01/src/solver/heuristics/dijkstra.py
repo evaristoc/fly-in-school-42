@@ -1,5 +1,6 @@
 import heapq
 from itertools import count
+from copy import deepcopy
 from typing import Set, Tuple, List, Iterator
 from ..heuristics.pathmethods import PathRules, CostFunction, PathAlgorithm
 from ..structures.roadmap_entitites import Step, RoadMap
@@ -96,19 +97,19 @@ class DijkstraAlgo(PathAlgorithm):
     def __init__(self, policy: PathRules, costf: CostFunction) -> None:
         super().__init__(policy, costf)
 
-    def search(self, graph: Graph, agent_id: int, entry_time: int) -> RoadMap | None:
+    def search(self, graph: Graph, agent_id: int, entry_time: int, constraints: ConstrMap) -> RoadMap | None:
         open_set: List[Step] = []
         counter = count()
-
+        self.policy.constraints = deepcopy(constraints)
         start = self.mastersolver._init_step(graph, entry_time, counter)
         if not start:
             raise Exception("Could not create first step")
         heapq.heappush(open_set, start)
         self.policy.best_cost[(start.zone.name, start.tick)] = start.f_cost
         max_ticks = len(graph.zones) * self.mastersolver.time_horizon_factor
-
         while open_set:
             current = heapq.heappop(open_set)
+            print("agent_id: graph", agent_id, graph)
             # it found a solution
             if current.zone == graph.goal:
                 return self.mastersolver._build_roadmap(current, agent_id)
@@ -118,14 +119,7 @@ class DijkstraAlgo(PathAlgorithm):
             if state in self.policy.visited:
                 continue
             self.policy.visited.add(state)
-            self.expand(
-                self,
-                current,
-                graph,
-                agent_id,
-                open_set,
-                counter
-            )
+            self.expand(current, graph, agent_id, open_set, counter)
         # no solution found
         return None
     
@@ -139,7 +133,6 @@ class DijkstraAlgo(PathAlgorithm):
         if current is None or current.zone is None:
             return None
         step_options = current.zone.neighbours
-
         if isinstance(current.zone, RestrictedZone) \
                 and current.wait < current.zone.max_wait - 1:
             # Only wait in place; do not consider other neighbors
@@ -148,7 +141,6 @@ class DijkstraAlgo(PathAlgorithm):
             if connection is None:
                 raise RuntimeError("No self-connection "
                                    f"found for {current.zone.name}")
-
             next_tick = current.tick + 1
             resstep: Step | None = None
             if graph is not None and graph.goal is not None:
@@ -161,14 +153,11 @@ class DijkstraAlgo(PathAlgorithm):
                 heapq.heappush(open_set, resstep)
             else:
                 raise Exception("Could not make a restricted waiting step")
-
             return None  # short-circuit: do not expand any other neighbour
         for connection in step_options:
-
             next_zone = connection.zone
             next_tick = current.tick + 1
             # print("check tick 1111", agent_id, next_tick)
-
             state = (next_zone.name, next_tick)
             new_cost = self.costf.compute_f_cost(next_zone, current.f_cost)
             if self.policy.evalute(new_cost,

@@ -1,7 +1,7 @@
 import heapq
 from collections import defaultdict
 from typing import List, Optional, Dict
-from ..pathfinder.pathfinder import PathfinderData
+from ..pathfinder.pathfinder import Pathfinder, PathfinderData
 from ..structures.ConflictNode import CTNode, Tree, Conflict, VertexConflict, \
     EdgeConflict, State
 from ..structures.roadmap_entitites import RoadMap
@@ -25,7 +25,7 @@ class CBSPlanner:
         self.tree: Optional[Tree] = None
         self.bisect: State = 'WAIT'
 
-    def solve(self) -> Dict[RoadMap]:
+    def solve(self) -> RoadMap:
         return self._best_first()
 
     def _best_first(self) -> RoadMap:
@@ -36,7 +36,7 @@ class CBSPlanner:
         if self.tree:
             root = self.tree
             Q = []
-            if root.update_solution(self.pathtfinder, self.pathfinderdata, self.agents):
+            if root.update_solution(self.pathfinder, self.pathfinderdata, self.agents):
                 root.calc_sol_cost()
                 heapq.heappush(Q, (root.cost, counter, root))
             else:
@@ -52,7 +52,7 @@ class CBSPlanner:
                     # print("cbsplanner:", id(node))
                     # print("cbsplanner left:", id(node.left))
                     node.left.add_constraint(conflict)
-                    if node.left.update_solution(self.pathtfinder, self.pathfinderdata, self.agents):
+                    if node.left.update_solution(self.pathfinder, self.pathfinderdata, self.agents):
                         node.left.calc_sol_cost()
                         counter += 1
                         heapq.heappush(Q, (node.left.cost, counter, node.left))
@@ -61,7 +61,7 @@ class CBSPlanner:
                     right_node = CTNode(self.agents, node)
                     node.right = right_node
                     node.right.add_constraint(conflict)
-                    if node.right.update_solution(self.pathtfinder, self.pathfinderdata, self.agents):
+                    if node.right.update_solution(self.pathfinder, self.pathfinderdata, self.agents):
                         # TODO this is a patch to keep working later on this
                         # NOTE: using only cost to reduce redundant branches is NOT correct
                         #       but it works for this project for now
@@ -81,61 +81,38 @@ class CBSPlanner:
             self.tree = CTNode(self.agents)
 
     def find_conflict(self, node: CTNode) -> Optional[Conflict]:
-
         if not node or not node.solution:
             raise Exception("ERROR when finding conflict - no agents or roadmaps found")
-
         # Longest roadmap
         max_t = max(max(rm.states.keys()) for rm in node.solution.values())
-
         for t in range(1, max_t + 1):
-
             # (from_name, to_name) -> [agent_ids]
             eoccupancy = defaultdict(list)
-
             # zone_name -> [agent_ids]
             zoccupancy = defaultdict(list)
-
             # zone_name -> canonical Zone instance
             zone_lookup = {}
-
-            # -----------------------------
-            # Build occupancy tables
-            # -----------------------------
             for agent in self.agents:
-
                 states = node.solution[agent.agent_id].states
-
                 if t not in states:
                     continue
-
                 _, curr_zone = states[t]
-
                 if (t - 1) in states:
                     prev_zone = states[t - 1][1]
                 else:
                     prev_zone = curr_zone
-
                 # Always remember canonical references
                 zone_lookup[prev_zone.name] = prev_zone
                 zone_lookup[curr_zone.name] = curr_zone
-
                 # Edge occupancy (includes start->X and X->goal)
                 if prev_zone.name != curr_zone.name:
                     eoccupancy[(prev_zone.name, curr_zone.name)].append(agent.agent_id)
-
                 # Vertex occupancy (ignore start/goal)
                 if not (isinstance(curr_zone, StartZone) or isinstance(curr_zone, EndZone)):
                     zoccupancy[curr_zone.name].append(agent.agent_id)
-
-            # -----------------------------
-            # EDGE CONFLICTS (checked first)
-            # -----------------------------
             for (from_name, to_name), agents in eoccupancy.items():
-
                 from_zone = zone_lookup[from_name]
                 to_zone = zone_lookup[to_name]
-
                 edge = next(
                     (
                         n.edge
@@ -144,12 +121,10 @@ class CBSPlanner:
                     ),
                     None,
                 )
-
                 if edge is None:
                     raise Exception(
                         f"Cannot find edge between {from_name} and {to_name}"
                     )
-
                 if len(agents) > edge.max_link_capacity:
                     return EdgeConflict(
                         agent_1=agents[0],
@@ -158,14 +133,8 @@ class CBSPlanner:
                         zone_to=to_zone,
                         tick=t,
                     )
-
-            # -----------------------------
-            # VERTEX CONFLICTS
-            # -----------------------------
             for zone_name, agents in zoccupancy.items():
-
                 zone = zone_lookup[zone_name]
-
                 if len(agents) > zone.max_drones:
                     return VertexConflict(
                         agent_1=agents[0],
@@ -173,5 +142,4 @@ class CBSPlanner:
                         zone=zone,
                         tick=t,
                     )
-
         return None

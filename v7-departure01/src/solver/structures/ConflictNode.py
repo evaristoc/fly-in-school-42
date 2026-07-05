@@ -58,7 +58,7 @@ class EdgeConflict(Conflict):
 
 
 class CTNode:
-    def __init__(self, allagents: List[Agent], parent: Optional[CTNode] = None):
+    def __init__(self, allagents: List[Agent], parent: Optional["CTNode"] = None) -> None:
         self.solution: Dict[RoadMap] = {}
         self.parent = parent
         self.agent_id: int = -1
@@ -72,19 +72,19 @@ class CTNode:
             self.solution = deepcopy(self.parent.solution)
 
     @property
-    def left(self) -> CTNode:
+    def left(self) -> "CTNode":
         return self._left
 
     @left.setter
-    def left(self, v: CTNode) -> None:
+    def left(self, v: "CTNode") -> None:
         self._left = v
 
     @property
-    def right(self) -> CTNode:
+    def right(self) -> "CTNode":
         return self._right
 
     @right.setter
-    def right(self, v: CTNode) -> None:
+    def right(self, v: "CTNode") -> None:
         self._right = v
 
     def register_solutions(self) -> None:
