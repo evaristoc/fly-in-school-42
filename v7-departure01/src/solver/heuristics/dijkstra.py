@@ -94,8 +94,8 @@ class DijkstraCostFunc(CostFunction):
 
 
 class DijkstraAlgo(PathAlgorithm):
-    def __init__(self, policy: PathRules, costf: CostFunction) -> None:
-        super().__init__(policy, costf)
+    def __init__(self, policy: PathRules, costfunc: CostFunction) -> None:
+        super().__init__(policy, costfunc)
 
     def search(self, graph: Graph, agent_id: int, entry_time: int, constraints: ConstrMap) -> RoadMap | None:
         open_set: List[Step] = []
@@ -109,17 +109,19 @@ class DijkstraAlgo(PathAlgorithm):
         max_ticks = len(graph.zones) * self.mastersolver.time_horizon_factor
         while open_set:
             current = heapq.heappop(open_set)
-            print("agent_id: graph", agent_id, graph)
+            # print("in search: agent_id: current", agent_id, current, graph.goal)
             # it found a solution
-            if current.zone == graph.goal:
+            if current.zone.name == graph.goal.name:
                 return self.mastersolver._build_roadmap(current, agent_id)
             if current.tick >= max_ticks:
                 continue
             state = (current.zone.name, current.tick)
+            # TODO check this, I have TWO different visited types?
             if state in self.policy.visited:
                 continue
             self.policy.visited.add(state)
             self.expand(current, graph, agent_id, open_set, counter)
+            print("open_set", len(open_set))
         # no solution found
         return None
     
@@ -159,23 +161,22 @@ class DijkstraAlgo(PathAlgorithm):
             next_tick = current.tick + 1
             # print("check tick 1111", agent_id, next_tick)
             state = (next_zone.name, next_tick)
-            new_cost = self.costf.compute_f_cost(next_zone, current.f_cost)
-            if self.policy.evalute(new_cost,
-                                   state,
-                                   next_tick,
-                                   agent_id,
-                                   connection,
-                                   current):
+            new_cost = self.costfunc.compute_f_cost(current, next_zone)
+            if self.policy.evaluate(new_cost,
+                                    state,
+                                    next_tick,
+                                    agent_id,
+                                    connection,
+                                    current):
+                # print("selected", agent_id, current, state)
                 continue
             # print("selected", agent_id, current, state)
             # print("check tick 2222", agent_id, next_tick, current.zone.name, connection.zone.name)
             step: Step | None = None
             # print("selected candidate", agent_id, next_tick, connection.zone.name)
             if graph is not None and graph.goal is not None:
-                step = self.mastersolver._build_step(graph,
-                                                     current,
+                step = self.mastersolver._build_step(current,
                                                      connection,
-                                                     graph.goal,
                                                      counter)
             if step is not None:
                 if step.f_cost == float("inf"):

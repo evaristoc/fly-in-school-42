@@ -56,7 +56,7 @@ class DijkstraPathfinder(Pathfinder):
             parent=current,
             wait=wait,
             counter=next(counter),
-            f_cost=self.algo.costfunc.compute_f_cost(self, current, zone)
+            f_cost=self.algo.costfunc.compute_f_cost(current, zone)
         )
         return step
 

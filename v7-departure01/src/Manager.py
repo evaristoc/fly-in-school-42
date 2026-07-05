@@ -65,8 +65,9 @@ class Manager:
         print("=== Check Graph ===")
         print("="*20)
         try:
-            graphmethods: GraphHeuristic = GraphBellmanFordWait 
+            graphmethods: GraphHeuristic = GraphBellmanFordWait
             self.graph = Graph(self.graphdata, graphmethods)
+            # print("graph in manager: self.graph.reversecost_map", self.graph.reversecost_map)
             members = inspect.getmembers(self.graph,
                                         lambda a: not (inspect.isroutine(a)))
             print("inspect", members)
@@ -89,7 +90,7 @@ class Manager:
         print("="*20)
 
     def run(self) -> None:
-        print("\033c")
+        # print("\033c")
         print("="*20)
         print("=== Run Planner ===")
         time.sleep(2)

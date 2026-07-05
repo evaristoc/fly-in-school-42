@@ -1,10 +1,12 @@
 from dataclasses import dataclass, field
+from types import MethodType
 from typing import List, Optional, Dict
 from src import ValidZone, ValidZoneMetadata, ValidEdge, ValidEdgeMetadata
 from ...solver.heuristics.graphmethods import GraphHeuristic
 
 from .Zone import Zone, StartZone, EndZone, HubFactory
 from .Edge import Edge
+from .Connection import Connection
 
 @dataclass
 class GraphData():
@@ -38,9 +40,12 @@ class Graph:
             raise Exception("Incorrect value of drones")
         if not all(self.zones) or not all(self.edges):
             raise Exception("Either None-valued zones or None-valued edges")
+        self.hub_connections()
         self.reversecost_map: Optional[Dict[Zone, float]] = None
         self.exec_methods = methods
-        self.exec_methods()
+        #self.compute_reverse_map = MethodType(self.exec_methods().compute_reverse_map, self)
+        self.exec_methods().compute_reverse_map(self)
+
 
     @property
     def startzone(self) -> Optional["Zone"]:
@@ -64,9 +69,22 @@ class Graph:
     def register_edge(self, edge: "Edge") -> None:
         self.edges.append(edge)
 
-    def exec_methods(self) -> None:
-        self.methods.hub_connections(self)
-        self.methods.compute_reverse_map(self)
+    def hub_connections(self):
+        for z in self.zones:
+            for edge in self.edges:
+                if z.name in edge.nodenames:
+                    for neigh in self.zones:
+                        if neigh.name != z.name and \
+                                neigh.name in edge.nodenames:
+                            conn = Connection(neigh, edge)
+                            if conn not in z.neighbours:
+                                z.neighbours.append(conn)
+            # # the following will solve the "waiting" case later...
+            z.neighbours.append(Connection(z))
+
+    # def exec_methods(self, graph: "Graph") -> None:
+    #     self.methods.compute_reverse_map(graph)
+    #     print("methods", self.methods.compute_reverse_map.__dict__)
 
     # def _hub_connections(self) -> None:
     #     ...

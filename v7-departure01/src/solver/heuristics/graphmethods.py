@@ -1,37 +1,15 @@
 # from abc import ABC, abstractmethod
-# from math import sqrt
-from abc import abstractmethod
-from typing import TYPE_CHECKING
-from ...model.graph.Connection import Connection
-
-if TYPE_CHECKING:
-    from ...model.graph.Zone import Zone, RestrictedZone
+from ...model.graph.Zone import RestrictedZone
 
 
-class GraphHeuristic:
-    @abstractmethod
-    def hub_connections(self):
-        ...
-    
+class GraphHeuristic:   
     def compute_reverse_map(self):
         ...
 
 
 class GraphBellmanFordWait(GraphHeuristic):
-    def hub_connections(self):
-        for z in self.zones:
-            for edge in self.edges:
-                if z.name in edge.nodenames:
-                    for neigh in self.zones:
-                        if neigh.name != z.name and \
-                                neigh.name in edge.nodenames:
-                            conn = Connection(neigh, edge)
-                            if conn not in z.neighbours:
-                                z.neighbours.append(conn)
-            # # the following will solve the "waiting" case later...
-            z.neighbours.append(Connection(z))
-
-    def compute_reverse_map(self):
+    def compute_reverse_map(self, graph):
+        self = graph
         # return {zone: min_hops_to_goal}
         reversecost_map = {zone: float('inf') for zone in self.zones}
         if self.goal:
