@@ -141,7 +141,7 @@ class CTNode:
         if len(agents) == 0:
             return False
         for agent in agents:
-            roadmap: RoadMap = agent.plan(pathfinderdata, self.constraints)
+            roadmap: RoadMap = agent.plan(pathfinder, pathfinderdata, self.constraints)
             if roadmap is None:
                 return False
             # print("in ct node, update sol - agents: ", agent.agent_id)
