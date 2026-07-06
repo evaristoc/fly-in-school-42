@@ -1,7 +1,8 @@
 import heapq
 from collections import defaultdict
-from typing import List, Optional, Dict
+from typing import List, Optional
 from ..pathfinder.pathfinder import Pathfinder, PathfinderData
+from ..structures.constraints import ConstrMap
 from ..structures.ConflictNode import CTNode, Tree, Conflict, VertexConflict, \
     EdgeConflict, State
 from ..structures.roadmap_entitites import RoadMap
@@ -21,21 +22,21 @@ class CBSPlanner:
         self.pathfinderdata = pathfinderdata
         if len(agents) == 0:
             raise Exception("ERROR at init CBSPlanner: no agents?")
-        self.constraints = []
+        self.constraints: ConstrMap = dict()
         self.tree: Optional[Tree] = None
-        self.bisect: State = 'WAIT'
+        # self.bisect: State = 'WAIT'
 
-    def solve(self) -> RoadMap:
+    def solve(self) -> RoadMap | None:
         return self._best_first()
 
-    def _best_first(self) -> RoadMap:
+    def _best_first(self) -> RoadMap | None:
         # TODO found circular, infinite loops
         # TODO one case was immediately giving an error before even running
         counter = 0
         self._add_ctnode()
         if self.tree:
             root = self.tree
-            Q = []
+            Q: list[tuple] = []
             if root.update_solution(self.pathfinder, self.pathfinderdata, self.agents):
                 root.calc_sol_cost()
                 heapq.heappush(Q, (root.cost, counter, root))
@@ -44,8 +45,8 @@ class CBSPlanner:
             while Q:
                 _, _, node = heapq.heappop(Q)
                 conflict = self.find_conflict(node)
-                #print(f"[CBS] node={id(node)} conflict={conflict.zone.name} t={conflict.tick}")
-                #print(f"[CBS] Q len {len(Q)}")
+                # print(f"[CBS] node={id(node)} conflict={conflict.zone.name} t={conflict.tick}")
+                # print(f"[CBS] Q len {len(Q)}")
                 if conflict:
                     left_node = CTNode(self.agents, node)
                     node.left = left_node
@@ -70,11 +71,11 @@ class CBSPlanner:
                             heapq.heappush(Q, (node.right.cost, counter, node.right))
                     else:
                         raise Exception("Error at Planner: no a right solution.")
-                    if counter > 5:
-                        break
+                    # if counter > 5:
+                    #     break
                 else:
                     return node.solution
-
+        return None
     # def register_agents(self, agents: List[Agent]) -> None:
     #     self.agents = agents
 
@@ -86,7 +87,9 @@ class CBSPlanner:
         if not node or not node.solution:
             raise Exception("ERROR when finding conflict - no agents or roadmaps found")
         # Longest roadmap
-        max_t = max(max(rm.states.keys()) for rm in node.solution.values())
+        max_t = max(max(rm.states.keys())
+                    for rm in node.solution.values()
+                    if rm.states is not None)
         for t in range(1, max_t + 1):
             # (from_name, to_name) -> [agent_ids]
             eoccupancy = defaultdict(list)
@@ -96,13 +99,14 @@ class CBSPlanner:
             zone_lookup = {}
             for agent in self.agents:
                 states = node.solution[agent.agent_id].states
-                if t not in states:
-                    continue
-                _, curr_zone = states[t]
-                if (t - 1) in states:
-                    prev_zone = states[t - 1][1]
-                else:
-                    prev_zone = curr_zone
+                if states is not None:
+                    if t not in states:
+                        continue
+                    _, curr_zone = states[t]
+                    if (t - 1) in states:
+                        prev_zone = states[t - 1][1]
+                    else:
+                        prev_zone = curr_zone
                 # Always remember canonical references
                 zone_lookup[prev_zone.name] = prev_zone
                 zone_lookup[curr_zone.name] = curr_zone
@@ -119,7 +123,7 @@ class CBSPlanner:
                     (
                         n.edge
                         for n in to_zone.neighbours
-                        if set(n.edge.nodenames) == {from_name, to_name}
+                        if n.edge and set(n.edge.nodenames) == {from_name, to_name}
                     ),
                     None,
                 )
@@ -129,19 +133,20 @@ class CBSPlanner:
                     )
                 if len(agents) > edge.max_link_capacity:
                     return EdgeConflict(
-                        agent_1=agents[0],
-                        agent_2=agents[1],
+                        agent_1=self.agents[agents[0]],
+                        agent_2=self.agents[agents[1]],
                         zone_from=from_zone,
                         zone_to=to_zone,
                         tick=t,
                     )
             for zone_name, agents in zoccupancy.items():
                 zone = zone_lookup[zone_name]
-                if len(agents) > zone.max_drones:
-                    return VertexConflict(
-                        agent_1=agents[0],
-                        agent_2=agents[1],
-                        zone=zone,
-                        tick=t,
-                    )
+                if zone and zone.max_drones is not None:
+                    if len(agents) > zone.max_drones:
+                        return VertexConflict(
+                            agent_1=self.agents[agents[0]],
+                            agent_2=self.agents[agents[1]],
+                            zone=zone,
+                            tick=t,
+                        )
         return None

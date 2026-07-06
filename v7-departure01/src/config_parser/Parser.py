@@ -158,7 +158,7 @@ class Parser:
                                     "declared hubs: "
                                     f"{edge_set ^ set(named_nodes)}")
 
-    def etl_config(self, path: Path) -> Optional[GraphData]:
+    def etl_config(self, path: Path) -> Optional["GraphData"]:
         try:
             lines = self._read_lines(path)
         except RuntimeError as e:

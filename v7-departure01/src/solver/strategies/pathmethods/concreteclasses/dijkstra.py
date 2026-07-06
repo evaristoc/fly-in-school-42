@@ -2,13 +2,13 @@ import heapq
 from itertools import count
 from copy import deepcopy
 from typing import Set, Tuple, List, Iterator
-from ..heuristics.pathmethods import PathRules, CostFunction, PathAlgorithm
-from ..structures.roadmap_entitites import Step, RoadMap
-from ..structures.constraints import ConstraintZone, ConstraintEdge, ConstrMap
-from ...model.graph.Zone import Zone, StartZone, BlockedZone, RestrictedZone, \
+from ..pathmethods import PathRules, CostFunction, PathAlgorithm
+from ....structures.roadmap_entitites import Step, RoadMap
+from ....structures.constraints import ConstraintZone, ConstraintEdge, ConstrMap
+from .....model.graph.Zone import Zone, StartZone, BlockedZone, RestrictedZone, \
     PriorityZone
-from ...model.graph.Connection import Connection
-from ...model.graph.Graph import Graph
+from .....model.graph.Connection import Connection
+from .....model.graph.Graph import Graph
 
 
 class DijkstraRules(PathRules):
@@ -27,13 +27,13 @@ class DijkstraRules(PathRules):
                  current: Step) -> bool:
         if self.is_forbidden(next_tick, agent_id, conn):
             self.unfeasible.add(state)
-        print(self.best_cost, self.unfeasible, self.visited)
+        # print(self.best_cost, self.unfeasible, self.visited)
         return new_cost > self.best_cost.get(state, float('inf')) or \
             state in self.unfeasible or \
             not self.can_transition(current, conn) or \
             conn.edge and conn.edge.nodenames in self.visited
 
-    def is_forbiden(self,
+    def is_forbidden(self,
                      tick: int,
                      agent_id: int,
                      conn: Connection) -> bool:
@@ -43,18 +43,20 @@ class DijkstraRules(PathRules):
         # does the zone has spare capacity?
         if not self.constraints or tick not in self.constraints:
             return False
-        cons_zones: ConstraintZone = self.constraints.get(tick, {}).get("zones", {})
-        zone = cons_zones.get(candzone)
-        if zone and agent_id in zone["agents"]:
-            # print(f"[BLOCK ZONE] agent={agent_id} tick={tick} zone={candzone}")
-            return True
+        cons_zones: ConstraintZone = self.constraints.get(tick, {}).get("zones")
+        if cons_zones:
+            zone = cons_zones.get(candzone)
+            if zone and agent_id in zone["agents"]:
+                # print(f"[BLOCK ZONE] agent={agent_id} tick={tick} zone={candzone}")
+                return True
         if conn.edge is not None:
             candedge = conn.edge.nodenames
-            cons_edges: ConstraintEdge = self.constraints.get(tick, {}).get("edges", {})
-            edge = cons_edges.get(frozenset({candedge[0], candedge[1]}))
-            if edge and agent_id in edge["agents"]:
-                # print(f"[BLOCK EDGE] agent={agent_id} tick={tick} edge={candedge}")
-                return True
+            cons_edges: ConstraintEdge = self.constraints.get(tick, {}).get("edges")
+            if cons_edges:
+                edge = cons_edges.get(frozenset({candedge[0], candedge[1]}))
+                if edge and agent_id in edge["agents"]:
+                    # print(f"[BLOCK EDGE] agent={agent_id} tick={tick} edge={candedge}")
+                    return True
         return False
 
     def can_transition(self,
@@ -79,8 +81,8 @@ class DijkstraRules(PathRules):
 
 
 class DijkstraCostFunc(CostFunction):
-    def compute_f_cost(self,
-                       current: Step,
+    @staticmethod
+    def compute_f_cost(current: Step,
                        goal: Zone) -> float:
         # Once in the game, cannot return to start zone
         if isinstance(goal, StartZone):
@@ -148,10 +150,8 @@ class DijkstraAlgo(PathAlgorithm):
             next_tick = currstep.tick + 1
             resstep: Step | None = None
             if graph is not None and graph.goal is not None:
-                resstep = self.mastersolver._build_step(graph,
-                                                        currstep,
+                resstep = self.mastersolver._build_step(currstep,
                                                         connection,
-                                                        graph.goal,
                                                         counter)
             if resstep is not None:
                 heapq.heappush(open_set, resstep)
@@ -170,7 +170,7 @@ class DijkstraAlgo(PathAlgorithm):
                                     agent_id,
                                     connection,
                                     currstep):
-                print("unselected", agent_id, nextstate)
+                # print("unselected", agent_id, nextstate)
                 continue
             # print("check tick 2222", agent_id, next_tick, current.zone.name, connection.zone.name)
             nextstep: Step | None = None

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from math import sqrt
-from ...model.graph.Zone import Zone
+from ....model.graph.Zone import Zone
 
 
 class Heuristic(ABC):

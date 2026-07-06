@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from ..pathfinder.pathfinder import Pathfinder
+    from ...pathfinder.pathfinder import Pathfinder
 
 
 class PathRules:
@@ -34,8 +34,10 @@ class PathAlgorithm:
         self.policy = policyinst
         self.mastersolver: Optional["Pathfinder"] = None
 
-    def search(self, *args, **kargs) -> None:
+    def search(self, *args, **kargs):
+        """returns Optional[RoadMap]"""
         ...
 
-    def expand(self, *args, **kargs) -> None:
+    def expand(self, *args, **kargs):
+        """returns None but fill in heap by reference"""
         ...

@@ -1,12 +1,11 @@
 from dataclasses import dataclass, field
-from types import MethodType
 from typing import List, Optional, Dict
 from src import ValidZone, ValidZoneMetadata, ValidEdge, ValidEdgeMetadata
-from ...solver.heuristics.graphmethods import GraphHeuristic
-
 from .Zone import Zone, StartZone, EndZone, HubFactory
 from .Edge import Edge
 from .Connection import Connection
+from ...solver.strategies.graphmethods.graphmethods import GraphHeuristic
+
 
 @dataclass
 class GraphData():
@@ -44,7 +43,7 @@ class Graph:
         self.reversecost_map: Optional[Dict[Zone, float]] = None
         self.exec_methods = methods
         #self.compute_reverse_map = MethodType(self.exec_methods().compute_reverse_map, self)
-        self.exec_methods().compute_reverse_map(self)
+        self.exec_methods.compute_reverse_map(self)
 
 
     @property

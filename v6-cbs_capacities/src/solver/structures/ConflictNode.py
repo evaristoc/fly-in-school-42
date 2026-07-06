@@ -141,6 +141,7 @@ class CTNode:
             agents = [agents[self.agent_id]]
         if len(agents) == 0:
             return False
+        print(f"[CTNode {id(self)}]: before replaning", self.solution)
         for agent in agents:
             roadmap: RoadMap = agent.plan(pathfinder, self.constraints)
             if roadmap is None:
@@ -151,7 +152,8 @@ class CTNode:
             print(f"[CTNode {id(self)}] constraints keys:", self.constraints)
             self.solution[agent.agent_id] = roadmap
         print(f"[CTNode {id(self)}]: finished solution")
-        print_solution(self.solution)
+        print(f"[CTNode {id(self)}]: finished solution", self.solution)
+        # print_solution(self.solution)
         return True
 
     def calc_sol_cost(self) -> float:

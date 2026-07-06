@@ -11,10 +11,10 @@ from typing import Optional, Dict, Union, Any
 from src.model.graph.Graph import GraphData, Graph
 from .config_parser import Parser
 from src.model.agent.Agent import Agent
-# from src.solver.pathfinder.pathfinder import Pathfinder
-from src.solver.heuristics.graphmethods import GraphHeuristic, GraphBellmanFordWait
 from src.solver.pathfinder.pathfinder import PathfinderData
-from src.solver.heuristics.dijkstra import DijkstraAlgo, DijkstraCostFunc, DijkstraRules
+from src.solver.strategies.graphmethods.graphmethods import GraphHeuristic
+from src.solver.strategies.graphmethods.concreteclasses.BellmanFord_Cap import GraphBellmanFordWait
+from src.solver.strategies.pathmethods.concreteclasses.dijkstra import DijkstraAlgo, DijkstraCostFunc, DijkstraRules
 from src.solver.pathfinder.dijkstrapathfinder import DijkstraPathfinder
 from src.solver.planner.cbsplanner import CBSPlanner
 
@@ -125,8 +125,7 @@ class Manager:
                                 dijkstrapathfinderdata)
         # Solve the MAPF problem using cbs
         self.roadmaps = cbsplanner.solve()
-
-        if not self.roadmaps:
+        if self.roadmaps is None:
             print("No feasible solution found!")
             sys.exit(1)
         else:

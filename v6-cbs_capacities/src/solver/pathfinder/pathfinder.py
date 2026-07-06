@@ -181,7 +181,7 @@ class Pathfinder:
                 # print("in the pathfinder aid, state: ", agent_id, state)
                 # print("in the pathfinder: unfeasibles (comes before checking forbid) :", agent_id, unfeasible)
                 unfeasible.add(state)
-                # print("in the pathfinder: unfeasibles after update (comes before checking forbid) :", agent_id, unfeasible)
+                print("in the pathfinder: unfeasibles after update (comes before checking forbid) :", agent_id, unfeasible)
                 continue
             # can_transition == temporary or permanent (not) evaluable state
             # include cases to which prioplanner doesn't have access
