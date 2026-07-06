@@ -14,7 +14,7 @@ from src.model.agent.Agent import Agent
 from src.solver.pathfinder.pathfinder import PathfinderData
 from src.solver.strategies.graphmethods.graphmethods import GraphHeuristic
 from src.solver.strategies.graphmethods.concreteclasses.BellmanFord_Cap import GraphBellmanFordWait
-from src.solver.strategies.pathmethods.concreteclasses.dijkstra import DijkstraAlgo, DijkstraCostFunc, DijkstraRules
+from src.solver.strategies.pathmethods.concreteclasses.dijkstra import DijkstraAlgo, DijkstraCostFunc, DijkstraRules, PriorityDijkstraRules, CBSDijkstraRules
 from src.solver.pathfinder.dijkstrapathfinder import DijkstraPathfinder
 from src.solver.planner.priorityplanner import PriorityPlanner
 from src.solver.planner.cbsplanner import CBSPlanner
@@ -121,10 +121,27 @@ class Manager:
         #                         dijkstradata)
         # # Solve the MAPF problem using cbs
         # self.roadmaps = cbsplanner.solve()
-        prioplanner = PriorityPlanner(agents,
-                                      DijkstraPathfinder,
-                                      dijkstradata)
-        self.roadmaps = prioplanner.solve()
+        """
+        The approach is sounding as long as pathfinderdata is non-mutable.
+        If I later introduce:
+            parallel planners
+            caching of dijkstradata
+            reuse of pathfinder instances
+            incremental replanning
+
+            Then that single mutable field becomes the first place bugs appear.
+        """
+        planner = PriorityPlanner(agents,
+                                  DijkstraPathfinder,
+                                  dijkstradata)
+        if isinstance(planner, CBSPlanner):
+            dijkstradata.pathrules = CBSDijkstraRules
+        elif isinstance(planner, PriorityPlanner):
+            dijkstradata.pathrules = PriorityDijkstraRules
+        else:
+            raise TypeError(f"Unsupported planner: {type(planner).__name__}")
+        print(dir(dijkstradata.pathrules))
+        self.roadmaps = planner.solve()
         if self.roadmaps is None:
             print("No feasible solution found!")
             sys.exit(1)

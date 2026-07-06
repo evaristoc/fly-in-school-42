@@ -1,17 +1,19 @@
 import heapq
 from itertools import count
+from abc import ABC
 from copy import deepcopy
 from typing import Set, Tuple, List, Iterator
 from ..pathmethods import PathRules, CostFunction, PathAlgorithm
+from ...planmethods.planmethods import ForbiddenCBS, ForbiddenPriority
 from ....structures.roadmap_entitites import Step, RoadMap
-from ....structures.constraints import ConstraintZone, ConstraintEdge, ConstrMap
+from ....structures.constraints import ConstrMap
 from .....model.graph.Zone import Zone, StartZone, BlockedZone, RestrictedZone, \
     PriorityZone
 from .....model.graph.Connection import Connection
 from .....model.graph.Graph import Graph
 
 
-class DijkstraRules(PathRules):
+class DijkstraRules(ABC):
     def __init__(self) -> None:
         self.constraints: ConstrMap = {}
         self.visited: Set[Tuple[str, int]] = set()
@@ -33,59 +35,12 @@ class DijkstraRules(PathRules):
             not self.can_transition(current, conn) or \
             conn.edge and conn.edge.nodenames in self.visited
 
-    # # NOTE: cbs planner
+    # @abstractmethod
     # def is_forbidden(self,
     #                  tick: int,
     #                  agent_id: int,
     #                  conn: Connection) -> bool:
-    #     candzone: str = conn.zone.name
-    #     candedge: None | tuple = None
-    #     # print(f"[FORBID CHECK] agent={agent_id} tick={tick} zone={candzone} edge={candedge} constraint_keys={list(self.constraints.keys())}")
-    #     # does the zone has spare capacity?
-    #     if not self.constraints or tick not in self.constraints:
-    #         return False
-    #     cons_zones: ConstraintZone = self.constraints.get(tick, {}).get("zones")
-    #     if cons_zones:
-    #         zone = cons_zones.get(candzone)
-    #         if zone and agent_id in zone["agents"]:
-    #             # print(f"[BLOCK ZONE] agent={agent_id} tick={tick} zone={candzone}")
-    #             return True
-    #     if conn.edge is not None:
-    #         candedge = conn.edge.nodenames
-    #         cons_edges: ConstraintEdge = self.constraints.get(tick, {}).get("edges")
-    #         if cons_edges:
-    #             edge = cons_edges.get(frozenset({candedge[0], candedge[1]}))
-    #             if edge and agent_id in edge["agents"]:
-    #                 # print(f"[BLOCK EDGE] agent={agent_id} tick={tick} edge={candedge}")
-    #                 return True
-    #     return False
-    
-    # NOTE: priority planner
-    def _is_forbidden(
-        self,
-        tick: int,
-        agent_id: int,
-        conn: Connection
-    ) -> bool:
-        candzone: str = conn.zone.name
-        candedge: None | tuple = None
-        # does the zone has spare capacity?
-        cons_zones: ConstraintZone = self.constraints.get(tick, {}).get("zones", {})
-        zone = cons_zones.get(candzone)
-        if zone and zone["capacity"] == zone["counter"]:
-            print("in pathfinder - candidate zone: ", candzone, zone)
-            return True
-        #print(zone, zone["capacity"], zone["counter"])
-        # zone has spare capacity, and the edge?
-        if conn.edge is not None:
-            candedge = conn.edge.nodenames
-            cons_edges: ConstraintEdge = self.constraints.get(tick, {}).get("edges", {})
-            edge = cons_edges.get(candedge)
-            if edge and edge["capacity"] == edge["counter"]:
-                print("in pathfinder - candidate edge: ", candedge, edge)
-                return True
-        # both has capacity: is not forbidden
-        return False
+    #     ...
 
     def can_transition(self,
                        current: Step,
@@ -106,6 +61,14 @@ class DijkstraRules(PathRules):
                 if current.parent else -1:
             return True
         return True
+
+
+class CBSDijkstraRules(ForbiddenCBS, DijkstraRules):
+    pass
+
+
+class PriorityDijkstraRules(ForbiddenPriority, DijkstraRules):
+    pass
 
 
 class DijkstraCostFunc(CostFunction):

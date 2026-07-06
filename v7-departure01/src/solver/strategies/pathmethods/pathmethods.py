@@ -10,9 +10,9 @@ class PathRules:
         """return bool"""
         ...
 
-    def is_forbidden(self, *args, **kargs):
-        """return bool"""
-        ...
+    # def is_forbidden(self, *args, **kargs):
+    #     """return bool"""
+    #     ...
 
 
 class CostFunction:
