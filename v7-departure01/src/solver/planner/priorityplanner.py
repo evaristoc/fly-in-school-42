@@ -1,6 +1,6 @@
 import random
 from typing import List, Dict
-from ..pathfinder.pathfinder import Pathfinder
+from ..pathfinder.pathfinder import Pathfinder, PathfinderData
 from ..structures.roadmap_entitites import RoadMap
 from ..structures.constraints import ConstraintZone, \
     ConstraintEdge, ConstrMap
@@ -16,13 +16,18 @@ class PriorityPlanner:
     Higher-priority agents constrain lower-priority agents via
     zone and edge reservations.
     """
-    def __init__(self, agents: List[Agent]) -> None:
+    def __init__(self,
+                 agents: List[Agent],
+                 pathfinderdecl: Pathfinder,
+                 pathfinderdata: PathfinderData) -> None:
         self.agents = agents
-        self.master_constraints: ConstrMap = {}
+        if len(agents) == 0:
+            raise Exception("ERROR at init PrioPlanner: no agents?")
+        self.pathfinder = pathfinderdecl
+        self.pathfinderdata = pathfinderdata
+        self.master_constraints: ConstrMap = dict()
 
-    def solve(self,
-              pathfinder: Pathfinder,
-              iterations: int = 10) -> Dict[int, RoadMap]:
+    def solve(self) -> Dict[int, RoadMap]:
         """
         Attempt to solve MAPF using prioritized planning with optional
         random agent order.
@@ -30,7 +35,7 @@ class PriorityPlanner:
         Returns:
             Dict[agent_id, RoadMap] on success, or {} if all retries fail.
         """
-        for attempt in range(iterations):
+        for attempt in range(self.pathfinderdata.time_horizon_factor):
             self.master_constraints.clear()
             final_roadmaps = {}
             success = True
@@ -42,7 +47,9 @@ class PriorityPlanner:
 
             for agent in current_order:
                 # The agent plans a path around all higher-priority paths
-                roadmap = agent.plan(pathfinder, self.master_constraints)
+                roadmap = agent.plan(self.pathfinder,
+                                     self.pathfinderdata,
+                                     self.master_constraints)
                 if roadmap is None:
                     success = False
                     # retry with different priority order

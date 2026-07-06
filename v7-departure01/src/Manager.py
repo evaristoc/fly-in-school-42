@@ -16,6 +16,7 @@ from src.solver.strategies.graphmethods.graphmethods import GraphHeuristic
 from src.solver.strategies.graphmethods.concreteclasses.BellmanFord_Cap import GraphBellmanFordWait
 from src.solver.strategies.pathmethods.concreteclasses.dijkstra import DijkstraAlgo, DijkstraCostFunc, DijkstraRules
 from src.solver.pathfinder.dijkstrapathfinder import DijkstraPathfinder
+from src.solver.planner.priorityplanner import PriorityPlanner
 from src.solver.planner.cbsplanner import CBSPlanner
 
 
@@ -105,26 +106,25 @@ class Manager:
                     graph=self.graph  # assign the pathfinder
                 )
                 agents.append(agent)
-            # Each agent gets a Pathfinder (optionally configure
-            # heuristics here)
-            # pathfinder = Pathfinder(
-            #     heuristic=None,          # or a specific Heuristic subclass
-            #     heuristic_weight=1.0,    # lambda factor
-            #     time_horizon_factor=3    # default time horizon multiplier
-            # )
-        # TODO : I had to pass this pathfinder as a declaration, not as an instance...
-        dijkstrapathfinderdata = PathfinderData(DijkstraAlgo,
-                                                DijkstraRules,
-                                                DijkstraCostFunc,
-                                                None,
-                                                0.0,
-                                                3)
+        # NOTE : I had to pass this pathfinder as a declaration, not as an instance...
+        # NOTE : so I am passing DATA instead of instances
+        dijkstradata = PathfinderData(
+                                    algo=DijkstraAlgo,
+                                    pathrules=DijkstraRules,
+                                    costfunc=DijkstraCostFunc,
+                                    heuristic=None,
+                                    heuristic_weight=0.0,
+                                    time_horizon_factor=3)
         # NOTE: notice that I am not instantiating the pathfinder immediately; it will happen when running for agents
-        cbsplanner = CBSPlanner(agents,
-                                DijkstraPathfinder,
-                                dijkstrapathfinderdata)
-        # Solve the MAPF problem using cbs
-        self.roadmaps = cbsplanner.solve()
+        # cbsplanner = CBSPlanner(agents,
+        #                         DijkstraPathfinder,
+        #                         dijkstradata)
+        # # Solve the MAPF problem using cbs
+        # self.roadmaps = cbsplanner.solve()
+        prioplanner = PriorityPlanner(agents,
+                                      DijkstraPathfinder,
+                                      dijkstradata)
+        self.roadmaps = prioplanner.solve()
         if self.roadmaps is None:
             print("No feasible solution found!")
             sys.exit(1)
