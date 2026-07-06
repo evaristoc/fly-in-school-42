@@ -16,28 +16,22 @@ class Conflict:
 
 def print_solution(solution: dict):
     print("\n=== CBS SOLUTION (readable) ===")
-
     agents = list(solution.keys())
-
     # collect all ticks
     max_t = max(
         max(rm.states.keys()) for rm in solution.values()
     )
-
     # build time table
     for t in range(max_t + 1):
         line = f"t={t}: "
         for aid in agents:
             rm = solution[aid]
-
             if t in rm.states:
                 _, zone = rm.states[t]
             else:
                 _, zone = rm.states[max(rm.states.keys())]
-
             line += f"A{aid}={zone.name}\t"
         print(line)
-
     print("\n=== END ===\n")
 
 @dataclass
@@ -96,7 +90,7 @@ class CTNode:
         if not self.parent:
             return None
         if self.parent.left and self.parent.left is self:
-            print("ctnode check:", conflict.agent_1)
+            # print("ctnode check:", conflict.agent_1)
             self.agent_id = conflict.agent_1
         if self.parent.right and self.parent.right is self:
             self.agent_id = conflict.agent_2
@@ -127,30 +121,34 @@ class CTNode:
             econstrs: ConstraintEdge = self.constraints[conflict.tick]["edges"]
             # ename: tuple = edge.nodenames
             ename: set | None = frozenset({conflict.zone_from.name, conflict.zone_to.name})
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ename, edge)
+            # print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ename, edge)
             if ename and ename not in econstrs:
                 econstrs[ename] = {
                                 "capacity": edge.max_link_capacity,
                                 "agents": set()}
             econstrs[ename]["agents"].add(self.agent_id)
-        print("in conflict node instance: ", conflict.tick, self.constraints[conflict.tick])
+        # print("in conflict node instance: ", conflict.tick, self.constraints[conflict.tick])
 
     def update_solution(self, pathfinder: Pathfinder, pathfinderdata: PathfinderData, agents: List[Agent] = []) -> bool:
         if self.agent_id != -1:
             agents = [agents[self.agent_id]]
         if len(agents) == 0:
             return False
+        print(f"[CTNode {id(self)}]: before replaning", self.solution)
         for agent in agents:
             roadmap: RoadMap = agent.plan(pathfinder, pathfinderdata, self.constraints)
+            # print(f"in ctnode {id(self)}: roadmap", roadmap)
             if roadmap is None:
                 return False
             # print("in ct node, update sol - agents: ", agent.agent_id)
             # print("in ct node, update sol - constraints: ", self.constraints)
             # print("in ct node, update sol - states: ", roadmap.states)
-            print(f"[CTNode {id(self)}] constraints keys:", self.constraints)
+            # print(f"[CTNode {id(self)}] constraints keys:", self.constraints)
+            # print(f"in ctnode {id(self)}: previous roadmap", self.solution.get(agent.agent_id, {}))
             self.solution[agent.agent_id] = roadmap
-        print(f"[CTNode {id(self)}]: finished solution")
-        print_solution(self.solution)
+            # print(f"in ctnode {id(self)}: after roadmap sub", self.solution.get(agent.agent_id, {}))
+        print(f"[CTNode {id(self)}]: finished solution", self.solution)
+        # print_solution(self.solution)
         return True
 
     def calc_sol_cost(self) -> float:

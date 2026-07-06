@@ -27,18 +27,19 @@ class DijkstraRules(PathRules):
                  current: Step) -> bool:
         if self.is_forbidden(next_tick, agent_id, conn):
             self.unfeasible.add(state)
+        print(self.best_cost, self.unfeasible, self.visited)
         return new_cost > self.best_cost.get(state, float('inf')) or \
             state in self.unfeasible or \
             not self.can_transition(current, conn) or \
             conn.edge and conn.edge.nodenames in self.visited
 
     def is_forbiden(self,
-                    tick: int,
-                    agent_id: int,
-                    conn: Connection) -> bool:
+                     tick: int,
+                     agent_id: int,
+                     conn: Connection) -> bool:
         candzone: str = conn.zone.name
         candedge: None | tuple = None
-        # print(f"[FORBID CHECK] agent={agent_id} tick={tick} zone={candzone} edge={candedge} constraint_keys={list(constraints.keys())}")
+        # print(f"[FORBID CHECK] agent={agent_id} tick={tick} zone={candzone} edge={candedge} constraint_keys={list(self.constraints.keys())}")
         # does the zone has spare capacity?
         if not self.constraints or tick not in self.constraints:
             return False
@@ -112,42 +113,43 @@ class DijkstraAlgo(PathAlgorithm):
             # print("in search: agent_id: current", agent_id, current, graph.goal)
             # it found a solution
             if current.zone.name == graph.goal.name:
+                # print("dijkstra solution", self.mastersolver._build_roadmap(current, agent_id))
                 return self.mastersolver._build_roadmap(current, agent_id)
             if current.tick >= max_ticks:
                 continue
-            state = (current.zone.name, current.tick)
+            currstate = (current.zone.name, current.tick)
             # TODO check this, I have TWO different visited types?
-            if state in self.policy.visited:
+            if currstate in self.policy.visited:
                 continue
-            self.policy.visited.add(state)
+            self.policy.visited.add(currstate)
             self.expand(current, graph, agent_id, open_set, counter)
-            print("open_set", len(open_set))
+            # print("open_set", len(open_set))
         # no solution found
         return None
     
     def expand(self,
-               current: Step,
+               currstep: Step,
                graph: Graph,
                agent_id: int,
                open_set: List[Step],
                counter: Iterator[int]
                ) -> None:
-        if current is None or current.zone is None:
+        if currstep is None or currstep.zone is None:
             return None
-        step_options = current.zone.neighbours
-        if isinstance(current.zone, RestrictedZone) \
-                and current.wait < current.zone.max_wait - 1:
+        step_options = currstep.zone.neighbours
+        if isinstance(currstep.zone, RestrictedZone) \
+                and currstep.wait < currstep.zone.max_wait - 1:
             # Only wait in place; do not consider other neighbors
             connection = next((c for c in step_options
-                               if c.zone == current.zone), None)
+                               if c.zone == currstep.zone), None)
             if connection is None:
                 raise RuntimeError("No self-connection "
-                                   f"found for {current.zone.name}")
-            next_tick = current.tick + 1
+                                   f"found for {currstep.zone.name}")
+            next_tick = currstep.tick + 1
             resstep: Step | None = None
             if graph is not None and graph.goal is not None:
                 resstep = self.mastersolver._build_step(graph,
-                                                        current,
+                                                        currstep,
                                                         connection,
                                                         graph.goal,
                                                         counter)
@@ -158,34 +160,33 @@ class DijkstraAlgo(PathAlgorithm):
             return None  # short-circuit: do not expand any other neighbour
         for connection in step_options:
             next_zone = connection.zone
-            next_tick = current.tick + 1
+            next_tick = currstep.tick + 1
             # print("check tick 1111", agent_id, next_tick)
-            state = (next_zone.name, next_tick)
-            new_cost = self.costfunc.compute_f_cost(current, next_zone)
+            nextstate = (next_zone.name, next_tick)
+            new_cost = self.costfunc.compute_f_cost(currstep, next_zone)
             if self.policy.evaluate(new_cost,
-                                    state,
+                                    nextstate,
                                     next_tick,
                                     agent_id,
                                     connection,
-                                    current):
-                # print("selected", agent_id, current, state)
+                                    currstep):
+                print("unselected", agent_id, nextstate)
                 continue
-            # print("selected", agent_id, current, state)
             # print("check tick 2222", agent_id, next_tick, current.zone.name, connection.zone.name)
-            step: Step | None = None
+            nextstep: Step | None = None
             # print("selected candidate", agent_id, next_tick, connection.zone.name)
             if graph is not None and graph.goal is not None:
-                step = self.mastersolver._build_step(current,
-                                                     connection,
-                                                     counter)
-            if step is not None:
-                if step.f_cost == float("inf"):
-                    self.policy.unfeasible.add(state)
+                nextstep = self.mastersolver._build_step(currstep,
+                                                         connection,
+                                                         counter)
+            if nextstep is not None:
+                if nextstep.f_cost == float("inf"):
+                    self.policy.unfeasible.add(nextstate)
                     continue
             else:
                 raise Exception("Could not make a step")
-            assert step.f_cost == new_cost
-            self.policy.best_cost[state] = new_cost
+            assert nextstep.f_cost == new_cost
+            self.policy.best_cost[nextstate] = new_cost
             if connection.edge:
                 self.policy.visited.add(connection.edge.nodenames)
-            heapq.heappush(open_set, step)
+            heapq.heappush(open_set, nextstep)

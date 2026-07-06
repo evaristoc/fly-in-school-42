@@ -6,16 +6,19 @@ if TYPE_CHECKING:
 
 
 class PathRules:
-    def can_transition(self, *args, **kargs) -> bool:
+    def can_transition(self, *args, **kargs):
+        """return bool"""
         ...
 
-    def is_forbidden(self, *args, **kargs) -> bool:
+    def is_forbidden(self, *args, **kargs):
+        """return bool"""
         ...
 
 
 class CostFunction:
     @staticmethod
-    def compute_f_cost(*args, **kargs) -> float:
+    def compute_f_cost(*args, **kargs):
+        """return float"""
         ...
 
 

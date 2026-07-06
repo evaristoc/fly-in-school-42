@@ -70,6 +70,8 @@ class CBSPlanner:
                             heapq.heappush(Q, (node.right.cost, counter, node.right))
                     else:
                         raise Exception("Error at Planner: no a right solution.")
+                    if counter > 5:
+                        break
                 else:
                     return node.solution
 
