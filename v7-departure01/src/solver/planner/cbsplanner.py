@@ -1,10 +1,10 @@
 import heapq
 from collections import defaultdict
-from typing import List, Optional
+from typing import List, Dict, Optional
 from ..pathfinder.pathfinder import Pathfinder, PathfinderData
 from ..structures.constraints import ConstrMap
 from ..structures.ConflictNode import CTNode, Tree, Conflict, VertexConflict, \
-    EdgeConflict, State
+    EdgeConflict
 from ..structures.roadmap_entitites import RoadMap
 from ...model.agent.Agent import Agent
 from ...model.graph.Zone import StartZone, EndZone
@@ -16,7 +16,10 @@ from ...model.graph.Zone import StartZone, EndZone
 
 
 class CBSPlanner:
-    def __init__(self, agents: List[Agent], pathfinderdecl: Pathfinder, pathfinderdata: PathfinderData):
+    def __init__(self,
+                 agents: List[Agent],
+                 pathfinderdecl: Pathfinder,
+                 pathfinderdata: PathfinderData) -> None:
         self.agents: List[Agent] = agents
         self.pathfinder = pathfinderdecl
         self.pathfinderdata = pathfinderdata
@@ -26,10 +29,10 @@ class CBSPlanner:
         self.tree: Optional[Tree] = None
         # self.bisect: State = 'WAIT'
 
-    def solve(self) -> RoadMap | None:
+    def solve(self) -> Dict[int, RoadMap] | None:
         return self._best_first()
 
-    def _best_first(self) -> RoadMap | None:
+    def _best_first(self) -> Dict[int, RoadMap] | None:
         # TODO found circular, infinite loops
         # TODO one case was immediately giving an error before even running
         counter = 0
