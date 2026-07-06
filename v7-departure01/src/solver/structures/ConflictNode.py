@@ -11,7 +11,9 @@ from ...model.graph.Edge import Edge
 
 
 class Conflict:
-    pass
+    agent_1: Agent
+    agent_2: Agent
+    tick: int
 
 
 def print_solution(solution: dict):
@@ -53,7 +55,7 @@ class EdgeConflict(Conflict):
 
 class CTNode:
     def __init__(self, allagents: List[Agent], parent: Optional["CTNode"] = None) -> None:
-        self.solution: Dict[RoadMap] = {}
+        self.solution: Dict[int, RoadMap] = {}
         self.parent = parent
         self.agent_id: int = -1
         self.allagents: List[Agent] = allagents
@@ -66,7 +68,7 @@ class CTNode:
             self.solution = deepcopy(self.parent.solution)
 
     @property
-    def left(self) -> "CTNode":
+    def left(self) -> Optional["CTNode"]:
         return self._left
 
     @left.setter
@@ -74,7 +76,7 @@ class CTNode:
         self._left = v
 
     @property
-    def right(self) -> "CTNode":
+    def right(self) -> Optional["CTNode"]:
         return self._right
 
     @right.setter
@@ -91,9 +93,9 @@ class CTNode:
             return None
         if self.parent.left and self.parent.left is self:
             # print("ctnode check:", conflict.agent_1)
-            self.agent_id = conflict.agent_1
+            self.agent_id = conflict.agent_1.agent_id
         if self.parent.right and self.parent.right is self:
-            self.agent_id = conflict.agent_2
+            self.agent_id = conflict.agent_2.agent_id
         # print("ctnode self:", id(self))
         # print("ctnode parent:", id(self.parent))
         # # print("ctnode same?", self.parent.left is self)
@@ -122,7 +124,7 @@ class CTNode:
             # ename: tuple = edge.nodenames
             ename: set | None = frozenset({conflict.zone_from.name, conflict.zone_to.name})
             # print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", ename, edge)
-            if ename and ename not in econstrs:
+            if edge and ename and ename not in econstrs:
                 econstrs[ename] = {
                                 "capacity": edge.max_link_capacity,
                                 "agents": set()}
@@ -134,9 +136,9 @@ class CTNode:
             agents = [agents[self.agent_id]]
         if len(agents) == 0:
             return False
-        print(f"[CTNode {id(self)}]: before replaning", self.solution)
+        # print(f"[CTNode {id(self)}]: before replaning", self.solution)
         for agent in agents:
-            roadmap: RoadMap = agent.plan(pathfinder, pathfinderdata, self.constraints)
+            roadmap: RoadMap | None = agent.plan(pathfinder, pathfinderdata, self.constraints)
             # print(f"in ctnode {id(self)}: roadmap", roadmap)
             if roadmap is None:
                 return False
@@ -147,16 +149,16 @@ class CTNode:
             # print(f"in ctnode {id(self)}: previous roadmap", self.solution.get(agent.agent_id, {}))
             self.solution[agent.agent_id] = roadmap
             # print(f"in ctnode {id(self)}: after roadmap sub", self.solution.get(agent.agent_id, {}))
-        print(f"[CTNode {id(self)}]: finished solution", self.solution)
+        # print(f"[CTNode {id(self)}]: finished solution", self.solution)
         # print_solution(self.solution)
         return True
 
-    def calc_sol_cost(self) -> float:
+    def calc_sol_cost(self) -> None:
         for roadmap in self.solution.values():
             self.cost += roadmap.cost
 
 
-class Tree:
+class Tree(CTNode):
     root: CTNode
 
 

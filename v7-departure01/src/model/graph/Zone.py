@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Type, Literal, cast
+from typing import List, Optional, TypeAlias, Literal, cast
 from src import ValidZone, ValidZoneMetadata
 from .Connection import Connection
 
@@ -152,8 +152,8 @@ class HubFactory:
                 return zone_subcls(mandatory, merged_config)
             else:
                 return zone_subcls(mandatory, default_config)
-        ZoneType: Type = Literal["restricted", "normal", "priority",
-                                 "blocked", "source", "sink"]
+        ZoneType: TypeAlias = Literal["restricted", "normal", "priority",
+                                      "blocked", "source", "sink"]
         # check zone or set to normal zone
         zone = cast(ZoneType, (meta.zone if meta else None) or "normal")
         # get the concrete class to be instantiated based on zone
