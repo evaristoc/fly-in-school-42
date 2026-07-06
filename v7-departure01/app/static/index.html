@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Graph Scheduler</title>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+        rel="stylesheet">
+    <link href="styles/style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div id="app">
+
+        <!-- ── Sidebar ── -->
+        <aside id="sidebar">
+            <div>
+                <div class="logo">Graph<span>Sched</span></div>
+                <div class="logo-sub">Multi-Agent Scheduler</div>
+            </div>
+
+            <div>
+                <div class="section-label">Config Files</div>
+                <div id="file-list">
+                    <div style="color:var(--muted);font-size:.7rem">Loading…</div>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-label">Graph Info</div>
+                <div id="status-box">
+                    <div class="line"><span>Name</span> <span class="val" id="s-name">—</span></div>
+                    <div class="line"><span>Nodes</span> <span class="val" id="s-nodes">—</span></div>
+                    <div class="line"><span>Edges</span> <span class="val" id="s-edges">—</span></div>
+                    <div class="line"><span>Agents</span> <span class="val" id="s-agents">—</span></div>
+                    <div class="line"><span>Steps</span> <span class="val" id="s-steps">—</span></div>
+                    <div class="line"><span>Status</span> <span class="val" id="s-status">idle</span></div>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-label">Agents</div>
+                <div id="agent-legend">
+                    <div style="color:var(--muted);font-size:.68rem">No graph loaded</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ── Main pane ── -->
+        <main id="main">
+            <div id="graph-wrap">
+                <div id="plotly-graph"></div>
+                <div id="empty-state">
+                    <div class="big">◈</div>
+                    <div class="hint">← Select a config file to begin</div>
+                </div>
+            </div>
+
+            <!-- Controls bar -->
+            <div id="controls">
+                <button class="ctrl-btn" id="btn-restart" title="Restart" disabled>↺</button>
+                <button class="ctrl-btn primary" id="btn-play" title="Play/Pause" disabled>▶</button>
+                <div id="slider-wrap">
+                    <input type="range" id="frame-slider" min="0" value="0" disabled>
+                    <div id="slider-labels">
+                        <span>Step 0</span>
+                        <span id="slider-max-label">—</span>
+                    </div>
+                </div>
+                <div id="frame-counter">— / —</div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast"></div>
+
+    <script src="js/main.js"></script>
+</body>
+
+</html>
