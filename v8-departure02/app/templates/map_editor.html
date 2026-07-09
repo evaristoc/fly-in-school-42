@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>MAPF Map Editor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        canvas {
+            border: 1px solid black;
+            cursor: crosshair;
+        }
+
+        button {
+            margin: 5px;
+            padding: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>MAPF Graph Editor</h2>
+    <input type="file" id="imageLoader" accept="image/png">
+    <button onclick="exportConfig()">Export Config</button>
+    <div id="properties">
+        <h3>Node Properties</h3>
+        <p>Select a node</p>
+    </div>
+    <button id="edgeModeButton">
+        Edge mode
+    </button>
+    <div id="edgeTable"></div>
+    <br><br>
+    <canvas id="canvas"></canvas>
+</body>
+<script src="../js/editor/editor.js"></script>
+
+</html>

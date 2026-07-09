@@ -1,0 +1,3 @@
+class GraphHeuristic:   
+    def compute_reverse_map(self):
+        ...

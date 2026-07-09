@@ -1,0 +1,43 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from ...pathfinder.pathfinder import Pathfinder
+
+
+class PathRules:
+    def can_transition(self, *args, **kargs):
+        """return bool"""
+        ...
+
+    # def is_forbidden(self, *args, **kargs):
+    #     """return bool"""
+    #     ...
+
+
+class CostFunction:
+    @staticmethod
+    def compute_f_cost(*args, **kargs):
+        """return float"""
+        ...
+
+
+class PathAlgorithm:
+    def __init__(self, policyinst: PathRules, costfuncinst: CostFunction) -> None:
+        """
+        get instances of constfunct and policy
+        accepts different kind of costfuncs and policies (as long as 
+        consistent with the search / expand implementation as well as
+        mastersolver implementation)
+        """
+        self.costfunc = costfuncinst
+        self.policy = policyinst
+        self.mastersolver: Optional["Pathfinder"] = None
+
+    def search(self, *args, **kargs):
+        """returns Optional[RoadMap]"""
+        ...
+
+    def expand(self, *args, **kargs):
+        """returns None but fill in heap by reference"""
+        ...
