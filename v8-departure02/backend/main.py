@@ -23,8 +23,7 @@ async def log_requests(request: Request, call_next):
     response = await call_next(request)
     print(response.status_code)
     return response
-
-STATIC_DIR = PROJECT_ROOT / "frontend/static"
+STATIC_DIR = PROJECT_ROOT / "app/static"
 
 
 # @app.get("/api/map_editor", response_class=FileResponse)

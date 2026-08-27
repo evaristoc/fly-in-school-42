@@ -22,6 +22,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 // ════════════════════════════════════════════════════════════════
 
 async function api(path, method = 'GET') {
+    console.log(path);
     const r = await fetch(path, {
         method,
         headers: {
@@ -39,10 +40,10 @@ async function api(path, method = 'GET') {
 
 // ════════════════════════════════════════════════════════════════
 //  File list:
-//  - all files available in the /api/files endpoint
+//  - all files available in the /api/solutions endpoint
 // ════════════════════════════════════════════════════════════════
 async function loadFileList() {
-    const { files } = await api('/api/files');
+    const { files } = await api('/api/solutions');
     const el = document.getElementById('file-list');
     if (!files.length) {
         el.innerHTML = '<div style="color:var(--muted);font-size:.7rem">No files found</div>';
@@ -72,7 +73,7 @@ async function loadGraph(filename, btn) {
     stopAnimation();
     setStatus('status', 'loading…');
     try {
-        await api(`/api/load/${filename}`, 'POST');
+        await api(`/api/solution/${filename}`, 'GET');
         graph = await api('/api/graph', 'GET');
     } catch (e) {
         toast(`Error: ${e.message}`, true);

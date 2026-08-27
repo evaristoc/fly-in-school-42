@@ -54,12 +54,12 @@ def start() -> None:
             if system == "Windows":
                 subprocess.Popen(
                     ["cmd.exe", "/c", "start", "", venv_python, "-m",
-                     "uvicorn", "server:app", "--port", str(port), "--reload"],
+                     "uvicorn", "backend.main:app", "--port", str(port), "--reload"],
                     creationflags=subprocess.CREATE_NEW_CONSOLE,
                     shell=True
                 )
             else:
-                command = f"{venv_python} -m uvicorn server:app "
+                command = f"{venv_python} -m uvicorn backend.main:app "
                 f"--port {str(port)} --reload; exec bash"
                 subprocess.Popen(
                     # [c for c in command.split(' ')],

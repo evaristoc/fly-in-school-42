@@ -20,6 +20,7 @@ def get_graph() -> dict:
 @router.get("/solutions")
 def list_graph_files() -> dict:
     """Return available config file names."""
+    print(SOLUTIONS_DIR)
     files = sorted(f.name for f in SOLUTIONS_DIR.glob("*.json"))
     return {"files": files}
 
